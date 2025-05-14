@@ -1,0 +1,29 @@
+{
+  "name": "mysite-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.8.4",
+    "element-plus": "^2.9.8",
+    "event-source-polyfill": "^1.0.31",
+    "eventsource-parser": "^3.0.1",
+    "github-markdown-css": "^5.8.1",
+    "markdown-it": "^14.1.0",
+    "md-editor-v3": "^5.5.1",
+    "pinia": "^3.0.2",
+    "pinia-persistedstate-plugin": "^0.1.0",
+    "router": "^2.2.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.2",
+    "vite": "^6.3.1"
+  }
+}

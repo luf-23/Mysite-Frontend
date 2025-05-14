@@ -1,0 +1,506 @@
+<script setup>
+import { reactive, ref, onMounted, onUnmounted } from "vue";
+import LeftMenu from "../components/LeftMenu.vue";
+import { getAvatarListService, getBackgroundListService } from "../api/url.js";
+import { useUserInfoStore } from "../store/userInfo.js";
+import { storeToRefs } from "pinia";
+import { ElMessage } from "element-plus";
+const userInfoStore = useUserInfoStore();
+const { userInfo } = storeToRefs(userInfoStore);
+
+const avatarDialogVisible = ref(false);
+const backgroundDialogVisible = ref(false);
+
+const avatarList = ref([]);
+const backgroundList = ref([]);
+
+// 获取头像列表
+const getAvatarList = async () => {
+  try {
+    const res = await getAvatarListService();
+    avatarList.value = res.data;
+  } catch (error) {
+    console.error("获取头像列表失败:", error);
+    ElMessage.error("获取头像列表失败");
+  }
+};
+
+// 获取背景图片列表
+const getBackgroundList = async () => {
+  try {
+    const res = await getBackgroundListService();
+    backgroundList.value = res.data;
+  } catch (error) {
+    console.error("获取背景图片列表失败:", error);
+    ElMessage.error("获取背景图片列表失败");
+  }
+};
+
+// 打开选择头像对话框时获取头像列表
+const openAvatarDialog = async () => {
+  avatarDialogVisible.value = true;
+  if (avatarList.value.length === 0) {
+    await getAvatarList();
+  }
+};
+
+// 打开选择背景图片对话框时获取背景图片列表
+const openBackgroundDialog = async () => {
+  backgroundDialogVisible.value = true;
+  if (backgroundList.value.length === 0) {
+    await getBackgroundList();
+  }
+};
+
+const selectAvatar = (avatar) => {
+  formData.avatarImage = avatar;
+  avatarDialogVisible.value = false;
+};
+
+const selectBackground = (background) => {
+  formData.backgroundImage = background;
+  backgroundDialogVisible.value = false;
+};
+
+const dialogVisible = ref(false);
+const formData = reactive({
+  nickname: "",
+  signature: "",
+  avatarImage: "",
+  backgroundImage: ""
+});
+const openDialog = function () {
+  dialogVisible.value = true;
+  formData.nickname = userInfo.value.nickname;
+  formData.signature = userInfo.value.signature;
+  formData.avatarImage = userInfo.value.avatarImage;
+  formData.backgroundImage = userInfo.value.backgroundImage;
+};
+const closeDialog = function () {
+  dialogVisible.value = false;
+};
+const formRef = ref(null);
+
+const rules = {
+  nickname: [
+    { required: true, message: "昵称不能为空", trigger: "blur" }
+    //{ min: 2, max: 20, message: '昵称长度应在 2 到 20 个字符之间', trigger: 'blur' }
+  ]
+};
+
+const submitForm = async () => {
+  if (!formRef.value) return;
+  try {
+    await formRef.value.validate();
+    updateUserInfo(formData);
+    ElMessage.success("更新成功");
+    closeDialog();
+  } catch (error) {
+    console.error("表单验证失败:", error);
+    ElMessage.error("请检查表单输入是否正确");
+  }
+};
+const updateUserInfo = (data) => {
+  //userInfo.value.username = data.username;
+  userInfo.value.nickname = data.nickname;
+  userInfo.value.signature = data.signature;
+  userInfo.value.avatarImage = data.avatarImage;
+  userInfo.value.backgroundImage = data.backgroundImage;
+};
+
+const windowWidth = ref(window?.innerWidth || 768);
+
+const updateWindowWidth = () => {
+  windowWidth.value = window.innerWidth;
+};
+
+onMounted(() => {
+  updateWindowWidth();
+  window.addEventListener("resize", updateWindowWidth);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", updateWindowWidth);
+});
+</script>
+
+<template>
+  <LeftMenu>
+    <div class="profile-container">
+      <el-card class="profile-card">
+        <div class="background-image">
+          <img :src="userInfo.backgroundImage" alt="Background" />
+        </div>
+
+        <div class="user-info">
+          <el-avatar :size="100" :src="userInfo.avatarImage" class="avatar" />
+
+          <div class="info-content">
+            <h2 class="nickname">{{ userInfo.nickname }}</h2>
+            <div class="username">@{{ userInfo.username }}</div>
+            <div class="signature">{{ userInfo.signature }}</div>
+          </div>
+
+          <div class="actions">
+            <el-button type="primary" size="small" v-on:click="openDialog"
+              >编辑资料</el-button
+            >
+          </div>
+        </div>
+
+        <el-tabs class="user-tabs">
+          <el-tab-pane label="基本信息">
+            <el-descriptions :column="1" border>
+              <el-descriptions-item label="用户名">{{
+                userInfo.username
+              }}</el-descriptions-item>
+              <el-descriptions-item label="昵称">{{
+                userInfo.nickname
+              }}</el-descriptions-item>
+              <el-descriptions-item label="个性签名">{{
+                userInfo.signature
+              }}</el-descriptions-item>
+            </el-descriptions>
+          </el-tab-pane>
+        </el-tabs>
+      </el-card>
+    </div>
+
+    <!-- 编辑对话框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      title="编辑资料"
+      :width="windowWidth <= 768 ? '90%' : '30%'"
+      :modal="true"
+      :model="formData"
+      :close-on-click-modal="false"
+      class="edit-profile-dialog"
+    >
+      <el-form
+        ref="formRef"
+        :model="formData"
+        :rules="rules"
+        label-width="80px"
+        class="edit-form"
+      >
+        <el-form-item label="昵称" prop="nickname">
+          <el-input v-model="formData.nickname"></el-input>
+        </el-form-item>
+        <el-form-item label="个性签名">
+          <el-input
+            v-model.number="formData.signature"
+            type="textarea"
+            :rows="3"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="头像" class="avatar-form-item">
+          <div class="avatar-input-group">
+            <el-input v-model="formData.avatarImage"></el-input>
+            <el-button @click="openAvatarDialog">选择头像</el-button>
+          </div>
+        </el-form-item>
+        <el-form-item label="背景图片" class="background-form-item">
+          <div class="background-input-group">
+            <el-input v-model="formData.backgroundImage"></el-input>
+            <el-button @click="openBackgroundDialog">选择背景</el-button>
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeDialog">取消</el-button>
+          <el-button type="primary" @click="submitForm">提交</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 选择头像对话框 -->
+    <el-dialog
+      v-model="avatarDialogVisible"
+      title="选择头像"
+      :width="windowWidth <= 768 ? '90%' : '30%'"
+      :modal="true"
+      :close-on-click-modal="false"
+      class="avatar-dialog"
+    >
+      <div class="avatar-list">
+        <el-image
+          v-for="avatar in avatarList"
+          :key="avatar"
+          :src="avatar"
+          class="avatar-item"
+          @click="selectAvatar(avatar)"
+        ></el-image>
+      </div>
+    </el-dialog>
+
+    <!-- 选择背景图片对话框 -->
+    <el-dialog
+      v-model="backgroundDialogVisible"
+      title="选择背景图片"
+      :width="windowWidth <= 768 ? '90%' : '30%'"
+      :modal="true"
+      :close-on-click-modal="false"
+      class="background-dialog"
+    >
+      <div class="background-list">
+        <el-image
+          v-for="background in backgroundList"
+          :key="background"
+          :src="background"
+          class="background-item"
+          @click="selectBackground(background)"
+        ></el-image>
+      </div>
+    </el-dialog>
+  </LeftMenu>
+</template>
+
+<style scoped>
+.profile-container {
+  padding: 20px;
+  min-height: calc(100vh - 40px);
+}
+
+.profile-card {
+  max-width: 800px;
+  margin: 0 auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  background: transparent;
+  position: relative;
+}
+
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.background-image::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0.6) 50%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  z-index: 2;
+}
+
+.background-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-info {
+  position: relative;
+  padding: 30px;
+  z-index: 3;
+  color: #fff;
+}
+
+.avatar {
+  border: 4px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+}
+
+.info-content {
+  margin-top: 15px;
+}
+
+.nickname {
+  font-size: 28px;
+  margin: 0;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.username {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 8px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.signature {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 10px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.actions {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.user-tabs {
+  position: relative;
+  z-index: 3;
+  margin-top: 20px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  margin: 20px;
+}
+
+:deep(.el-descriptions__label) {
+  font-weight: 500;
+}
+
+:deep(.el-descriptions__content) {
+  line-height: 1.6;
+}
+
+.avatar-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.avatar-item {
+  width: 80px;
+  height: 80px;
+  cursor: pointer;
+}
+
+.background-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.background-item {
+  width: 120px;
+  height: 80px;
+  cursor: pointer;
+}
+
+.edit-profile-dialog {
+  padding: 20px;
+}
+
+.edit-form {
+  margin-top: 10px;
+}
+
+.avatar-form-item .avatar-input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.background-form-item .background-input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.avatar-dialog {
+  padding: 20px;
+}
+
+.background-dialog {
+  padding: 20px;
+}
+
+/* 移动端适配样式 */
+@media screen and (max-width: 768px) {
+  .profile-container {
+    padding: 10px;
+  }
+
+  .user-info {
+    padding: 20px 15px;
+  }
+
+  .actions {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    margin-top: 0;
+    text-align: right;
+  }
+
+  .nickname {
+    font-size: 22px;
+    padding-right: 60px;
+  }
+
+  .edit-form {
+    padding: 0 10px;
+  }
+
+  :deep(.el-form-item__label) {
+    float: none;
+    display: block;
+    text-align: left;
+    margin-bottom: 8px;
+  }
+
+  .avatar-input-group,
+  .background-input-group {
+    flex-direction: column;
+  }
+
+  .avatar-input-group .el-button,
+  .background-input-group .el-button {
+    margin-top: 8px;
+    width: 100%;
+  }
+
+  .avatar-list,
+  .background-list {
+    justify-content: center;
+  }
+
+  .avatar-item {
+    width: 60px;
+    height: 60px;
+  }
+
+  .background-item {
+    width: 100px;
+    height: 70px;
+  }
+
+  .dialog-footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .dialog-footer .el-button {
+    flex: 0 0 auto;
+    min-width: 80px;
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 15px;
+  }
+
+  :deep(.el-dialog__footer) {
+    padding: 10px 15px 15px;
+  }
+}
+</style>
