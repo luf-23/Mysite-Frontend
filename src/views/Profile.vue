@@ -5,8 +5,42 @@ import { getAvatarListService, getBackgroundListService } from "../api/url.js";
 import { useUserInfoStore } from "../store/userInfo.js";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
+import { useRoute } from "vue-router";
+import {
+  getUserInfoByNameService,
+  updateUserInfoService
+} from "../api/user.js";
+const route = useRoute();
+const author = route.query.author ? route.query.author : null;
 const userInfoStore = useUserInfoStore();
 const { userInfo } = storeToRefs(userInfoStore);
+const isAuthor = ref(userInfo.value.username === author);
+if (!author) {
+  isAuthor.value = true; // 如果没有提供作者，则视为当前用户
+}
+//其他用户数据
+const userInfoData = ref({
+  username: "",
+  nickname: "",
+  signature: "",
+  avatarImage: "",
+  backgroundImage: ""
+});
+const getUserInfoData = async () => {
+  const result = await getUserInfoByNameService({
+    username: author
+  });
+  userInfoData.value = {
+    username: result.data.username,
+    nickname: result.data.nickname,
+    signature: result.data.signature,
+    avatarImage: result.data.avatarImage,
+    backgroundImage: result.data.backgroundImage
+  };
+};
+if (author && author !== userInfo.value.username) {
+  getUserInfoData();
+}
 
 const avatarDialogVisible = ref(false);
 const backgroundDialogVisible = ref(false);
@@ -92,7 +126,7 @@ const submitForm = async () => {
   if (!formRef.value) return;
   try {
     await formRef.value.validate();
-    updateUserInfo(formData);
+    await updateUserInfo(formData);
     ElMessage.success("更新成功");
     closeDialog();
   } catch (error) {
@@ -100,12 +134,18 @@ const submitForm = async () => {
     ElMessage.error("请检查表单输入是否正确");
   }
 };
-const updateUserInfo = (data) => {
+const updateUserInfo = async (data) => {
   //userInfo.value.username = data.username;
   userInfo.value.nickname = data.nickname;
   userInfo.value.signature = data.signature;
   userInfo.value.avatarImage = data.avatarImage;
   userInfo.value.backgroundImage = data.backgroundImage;
+  await updateUserInfoService({
+    nickname: data.nickname,
+    signature: data.signature,
+    avatarImage: data.avatarImage,
+    backgroundImage: data.backgroundImage
+  });
 };
 
 const windowWidth = ref(window?.innerWidth || 768);
@@ -129,21 +169,41 @@ onUnmounted(() => {
     <div class="profile-container">
       <el-card class="profile-card">
         <div class="background-image">
-          <img :src="userInfo.backgroundImage" alt="Background" />
+          <img
+            :src="
+              isAuthor ? userInfo.backgroundImage : userInfoData.backgroundImage
+            "
+            alt="Background"
+          />
         </div>
 
         <div class="user-info">
-          <el-avatar :size="100" :src="userInfo.avatarImage" class="avatar" />
+          <el-avatar
+            :size="100"
+            :src="isAuthor ? userInfo.avatarImage : userInfoData.avatarImage"
+            class="avatar"
+          />
 
           <div class="info-content">
-            <h2 class="nickname">{{ userInfo.nickname }}</h2>
-            <div class="username">@{{ userInfo.username }}</div>
-            <div class="signature">{{ userInfo.signature }}</div>
+            <h2 class="nickname">
+              {{ isAuthor ? userInfo.nickname : userInfoData.nickname }}
+            </h2>
+            <div class="username">
+              @{{ isAuthor ? userInfo.username : userInfoData.username }}
+            </div>
+            <div class="signature">
+              {{ isAuthor ? userInfo.signature : userInfoData.signature }}
+            </div>
           </div>
 
           <div class="actions">
-            <el-button type="primary" size="small" v-on:click="openDialog"
-              >编辑资料</el-button
+            <el-button
+              type="primary"
+              size="small"
+              v-on:click="openDialog"
+              v-if="isAuthor"
+            >
+              编辑资料</el-button
             >
           </div>
         </div>
@@ -152,13 +212,13 @@ onUnmounted(() => {
           <el-tab-pane label="基本信息">
             <el-descriptions :column="1" border>
               <el-descriptions-item label="用户名">{{
-                userInfo.username
+                isAuthor ? userInfo.username : userInfoData.username
               }}</el-descriptions-item>
               <el-descriptions-item label="昵称">{{
-                userInfo.nickname
+                isAuthor ? userInfo.nickname : userInfoData.nickname
               }}</el-descriptions-item>
               <el-descriptions-item label="个性签名">{{
-                userInfo.signature
+                isAuthor ? userInfo.signature : userInfoData.signature
               }}</el-descriptions-item>
             </el-descriptions>
           </el-tab-pane>

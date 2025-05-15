@@ -102,6 +102,15 @@ const handleEdit = () => {
     }
   });
 };
+
+const handleAuthorClick = (authorName) => {
+  router.push({
+    name: "Profile",
+    query: {
+      author: authorName
+    }
+  });
+};
 </script>
 
 <template>
@@ -127,7 +136,7 @@ const handleEdit = () => {
               {{ getStatusText(articleData.status) }}
             </el-tag>
           </div>
-          <div class="meta-item author-info">
+          <div class="meta-item author-info" @click="handleAuthorClick(author)">
             <span class="label">作者：</span>
             <span>{{ author }}</span>
           </div>
@@ -273,6 +282,7 @@ const handleEdit = () => {
   border-radius: 6px;
   background-color: #f8f9fa;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
 }
 
 .label {

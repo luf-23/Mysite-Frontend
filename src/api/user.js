@@ -42,3 +42,14 @@ export function updateUserInfoService(data) {
     }
   });
 }
+
+export function getUserInfoByNameService(params) {
+  return request({
+    url: "/user/getInfoByName",
+    method: "get",
+    params,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    }
+  });
+}
