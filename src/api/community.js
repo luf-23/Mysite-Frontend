@@ -9,6 +9,17 @@ export function getCommunityListService() {
   });
 }
 
+export function getSelectedCommunityListService(params) {
+  return request({
+    url: "/community/selectedList",
+    method: "get",
+    params,
+    headers: {
+      ContentType: "application/xxx-www-form-urlencoded"
+    }
+  });
+}
+
 //根据categoryId获取作者名字
 export function getAuthorNameService(params) {
   return request({
