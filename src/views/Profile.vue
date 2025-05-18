@@ -1,7 +1,6 @@
 <script setup>
 import { reactive, ref, onMounted, onUnmounted } from "vue";
 import LeftMenu from "../components/LeftMenu.vue";
-import { getAvatarListService, getBackgroundListService } from "../api/url.js";
 import { useUserInfoStore } from "../store/userInfo.js";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
@@ -10,6 +9,12 @@ import {
   getUserInfoByNameService,
   updateUserInfoService
 } from "../api/user.js";
+import {
+  getCredentialsService,
+  getBucketService,
+  getEndPointService
+} from "../api/oss.js";
+import OSS from "ali-oss";
 const route = useRoute();
 const author = route.query.author ? route.query.author : null;
 const userInfoStore = useUserInfoStore();
@@ -42,58 +47,77 @@ if (author && author !== userInfo.value.username) {
   getUserInfoData();
 }
 
-const avatarDialogVisible = ref(false);
-const backgroundDialogVisible = ref(false);
-
-const avatarList = ref([]);
-const backgroundList = ref([]);
-
-// 获取头像列表
-const getAvatarList = async () => {
-  try {
-    const res = await getAvatarListService();
-    avatarList.value = res.data;
-  } catch (error) {
-    console.error("获取头像列表失败:", error);
-    ElMessage.error("获取头像列表失败");
-  }
+const selectImageDialogVisible = ref(false);
+const isAvatar = ref(false);
+const imageUrl = ref(null); //只做临时展示预览
+const selectedFile = ref(null);
+const STS = reactive({
+  credentials: [],
+  bucket: "",
+  endPoint: ""
+});
+let client;
+const initSTS = async () => {
+  const credentials = await getCredentialsService();
+  const bucket = await getBucketService();
+  const endPoint = await getEndPointService();
+  STS.credentials = credentials.data;
+  STS.bucket = bucket.data;
+  STS.endPoint = endPoint.data;
+  //初始化oss
+  client = new OSS({
+    endpoint: STS.endPoint,
+    accessKeyId: STS.credentials.accessKeyId,
+    accessKeySecret: STS.credentials.accessKeySecret,
+    stsToken: STS.credentials.securityToken,
+    bucket: STS.bucket
+  });
 };
-
-// 获取背景图片列表
-const getBackgroundList = async () => {
-  try {
-    const res = await getBackgroundListService();
-    backgroundList.value = res.data;
-  } catch (error) {
-    console.error("获取背景图片列表失败:", error);
-    ElMessage.error("获取背景图片列表失败");
-  }
+initSTS();
+const generateFileName = () => {
+  // 生成文件名（避免重复）
+  const extension = selectedFile.value.name.split(".").pop();
+  const fileName = isAvatar.value
+    ? `avatar/${userInfo.value.userId}.${extension}`
+    : `background/${userInfo.value.userId}.${extension}`;
+  return fileName;
 };
-
-// 打开选择头像对话框时获取头像列表
+const generateFileUrl = () => {
+  const fileUrl = `http://${STS.bucket}.${STS.endPoint}/` + generateFileName();
+  return fileUrl;
+};
 const openAvatarDialog = async () => {
-  avatarDialogVisible.value = true;
-  if (avatarList.value.length === 0) {
-    await getAvatarList();
-  }
+  isAvatar.value = true;
+  imageUrl.value = userInfo.value.avatarImage;
+  selectImageDialogVisible.value = true;
 };
-
-// 打开选择背景图片对话框时获取背景图片列表
 const openBackgroundDialog = async () => {
-  backgroundDialogVisible.value = true;
-  if (backgroundList.value.length === 0) {
-    await getBackgroundList();
+  isAvatar.value = false;
+  imageUrl.value = userInfo.value.backgroundImage;
+  selectImageDialogVisible.value = true;
+};
+const handleFileChange = (event) => {
+  if (event.target && event.target.files) {
+    const file = event.target.files[0];
+    imageUrl.value = URL.createObjectURL(file);
+    selectedFile.value = file;
+  } else {
+    console.error("文件输入元素未找到或未正确绑定事件");
   }
 };
-
-const selectAvatar = (avatar) => {
-  formData.avatarImage = avatar;
-  avatarDialogVisible.value = false;
+const closeImageDialog = () => {
+  imageUrl.value = null;
+  selectImageDialogVisible.value = false;
 };
-
-const selectBackground = (background) => {
-  formData.backgroundImage = background;
-  backgroundDialogVisible.value = false;
+const uploadImage = async () => {
+  const fileName = generateFileName();
+  // 上传文件
+  await client.put(fileName, selectedFile.value);
+};
+const submitImage = async () => {
+  if (isAvatar.value) formData.avatarImage = generateFileUrl();
+  else formData.backgroundImage = generateFileUrl();
+  closeImageDialog();
 };
 
 const dialogVisible = ref(false);
@@ -127,6 +151,7 @@ const submitForm = async () => {
   try {
     await formRef.value.validate();
     await updateUserInfo(formData);
+    await uploadImage();
     ElMessage.success("更新成功");
     closeDialog();
   } catch (error) {
@@ -274,44 +299,34 @@ onUnmounted(() => {
       </template>
     </el-dialog>
 
-    <!-- 选择头像对话框 -->
+    <!--图片选择对话框-->
     <el-dialog
-      v-model="avatarDialogVisible"
-      title="选择头像"
+      v-model="selectImageDialogVisible"
+      title="请选择图片"
       :width="windowWidth <= 768 ? '90%' : '30%'"
       :modal="true"
       :close-on-click-modal="false"
-      class="avatar-dialog"
+      :model="imageUrl"
     >
-      <div class="avatar-list">
-        <el-image
-          v-for="avatar in avatarList"
-          :key="avatar"
-          :src="avatar"
-          class="avatar-item"
-          @click="selectAvatar(avatar)"
-        ></el-image>
+      <input type="file" @change="handleFileChange" accept="image/*" />
+      <div v-if="imageUrl">
+        <img
+          :src="imageUrl"
+          alt="Selected Image"
+          style="max-width: 100%; height: auto"
+        />
       </div>
-    </el-dialog>
-
-    <!-- 选择背景图片对话框 -->
-    <el-dialog
-      v-model="backgroundDialogVisible"
-      title="选择背景图片"
-      :width="windowWidth <= 768 ? '90%' : '30%'"
-      :modal="true"
-      :close-on-click-modal="false"
-      class="background-dialog"
-    >
-      <div class="background-list">
-        <el-image
-          v-for="background in backgroundList"
-          :key="background"
-          :src="background"
-          class="background-item"
-          @click="selectBackground(background)"
-        ></el-image>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeImageDialog">取消</el-button>
+          <el-button
+            type="primary"
+            @click="submitImage"
+            :disabled="!selectedFile"
+            >提交</el-button
+          >
+        </div>
+      </template>
     </el-dialog>
   </LeftMenu>
 </template>
