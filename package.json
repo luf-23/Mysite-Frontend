@@ -11,6 +11,7 @@
   "dependencies": {
     "ali-oss": "^6.23.0",
     "axios": "^1.8.4",
+    "dompurify": "^3.2.6",
     "element-plus": "^2.9.8",
     "event-source-polyfill": "^1.0.31",
     "eventsource-parser": "^3.0.1",

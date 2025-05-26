@@ -39,6 +39,7 @@ const getCommunityList = async () => {
       const authorName = await getAuthorName({
         categoryId: item.categoryId
       });
+      console.log(111);
       item.author = authorName;
     }
     communityList.value.sort((a, b) => {

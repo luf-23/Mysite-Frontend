@@ -5,15 +5,10 @@ import { storeToRefs } from "pinia";
 import { ElMessage, ElSelect, ElOption } from "element-plus";
 import { chatService } from "../../api/ai";
 import { ElMessageBox } from "element-plus";
-import MarkdownIt from "markdown-it";
 import "github-markdown-css";
 import { getBaseURL } from "../../utils/request";
 import { useTokenStore } from "../../store/token";
-const md = new MarkdownIt({
-  html: true,
-  breaks: true,
-  linkify: true
-});
+import { renderMarkdown } from "../../utils/markdown";
 
 const chatStore = useChatStore();
 const { chatList, currentChatId } = storeToRefs(chatStore);
@@ -218,10 +213,7 @@ const handleChatDelete = (chatId) => {
   });
 };
 
-// 将 Markdown 转换为 HTML
-const renderMarkdown = (content) => {
-  return md.render(content);
-};
+// Markdown渲染方法已移至 utils/markdown.js
 
 const isSidebarVisible = ref(false);
 
@@ -323,9 +315,13 @@ const handleChatSelect = (id) => {
             :class="['message', msg.role]"
           >
             <div
+              v-if="msg.role === 'assistant'"
               class="message-content markdown-body"
               v-html="renderMarkdown(msg.content)"
             ></div>
+            <div v-else-if="msg.role === 'user'" class="message-content">
+              {{ msg.content }}
+            </div>
             <div class="message-time">
               {{ new Date(msg.timestamp).toLocaleTimeString() }}
             </div>
@@ -337,7 +333,7 @@ const handleChatSelect = (id) => {
       <div class="chat-input">
         <textarea
           v-model="inputMessage"
-          placeholder="输入消息...    Enter换行   Ctrl+Enter发送"
+          placeholder="请输入文本..."
           @keyup.enter.ctrl="sendMessage"
           rows="3"
         ></textarea>
@@ -646,6 +642,7 @@ const handleChatSelect = (id) => {
   align-self: flex-end;
   background-color: #4caf50;
   color: white;
+  font-size: 13px;
 }
 
 .message.assistant {
@@ -701,9 +698,12 @@ const handleChatSelect = (id) => {
 
 .message.user :deep(.markdown-body) {
   background: transparent;
-  color: white;
+  color: rgba(255, 255, 255, 0.95);
   font-size: 14px;
   line-height: 1.6;
+  letter-spacing: 0.3px;
+  font-weight: 400;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
 /* 代码块样式调整 */

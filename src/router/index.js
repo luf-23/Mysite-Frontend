@@ -11,6 +11,8 @@ import NotFound from "../views/default/NotFound.vue";
 import Community from "../views/Community.vue";
 import Announcement from "../views/Announcement.vue";
 import Chat from "../views/ai/Chat.vue";
+import ArticleListManager from "../views/admin/ArticleListManager.vue";
+import ArticleManager from "../views/admin/ArticleManager.vue";
 const routes = [
   {
     path: "/login",
@@ -116,6 +118,32 @@ const routes = [
       requireAuth: true
     },
     component: Chat
+  },
+  {
+    path: "/admin",
+    name: "Admin",
+    meta: {
+      title: "管理员操作",
+      requireAuth: true
+    },
+    children: [
+      {
+        path: "list",
+        name: "ArticleListManager",
+        meta: {
+          title: "文章列表"
+        },
+        component: ArticleListManager
+      },
+      {
+        path: "detail",
+        name: "ArticleDetailManager",
+        meta: {
+          title: "文章详情"
+        },
+        component: ArticleManager
+      }
+    ]
   }
 ];
 

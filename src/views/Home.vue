@@ -11,7 +11,8 @@ import {
   Document,
   Bell,
   ChatDotSquare,
-  ChatDotRound
+  ChatDotRound,
+  HotWater
 } from "@element-plus/icons-vue";
 
 const router = useRouter();
@@ -19,6 +20,7 @@ const tokenStore = useTokenStore();
 const userInfoStore = useUserInfoStore();
 const token = tokenStore.token;
 const { userInfo } = storeToRefs(userInfoStore);
+const loading = ref(false);
 
 // 获取时间相关数据
 const currentDate = ref(new Date());
@@ -77,7 +79,15 @@ const quickActions = ref([
     description: "查看最新系统公告"
   }
 ]);
-
+if (userInfo.value.username === "admin") {
+  quickActions.value.push({
+    title: "管理员入口",
+    icon: markRaw(HotWater),
+    path: "/admin/list",
+    color: "#666666",
+    description: "提供管理员相关接口"
+  });
+}
 onMounted(() => {
   if (!token) {
     router.push("/login");
@@ -85,6 +95,12 @@ onMounted(() => {
   }
   updateDateTime();
 });
+
+const handleWelcomeClick = () => {
+  router.push({
+    path: "/profile"
+  });
+};
 </script>
 
 <template>
@@ -99,6 +115,7 @@ onMounted(() => {
             userInfo.backgroundImage || '/background/background1.jpg'
           })`
         }"
+        @click="handleWelcomeClick"
       >
         <div class="welcome-content">
           <el-avatar
@@ -244,5 +261,9 @@ onMounted(() => {
   margin: 0;
   font-size: 14px;
   color: #666;
+}
+
+.main-content {
+  cursor: pointer;
 }
 </style>

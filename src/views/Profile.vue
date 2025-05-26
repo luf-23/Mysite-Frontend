@@ -73,7 +73,6 @@ const initSTS = async () => {
     bucket: STS.bucket
   });
 };
-initSTS();
 const generateFileName = () => {
   // 生成文件名（避免重复）
   const extension = selectedFile.value.name.split(".").pop();
@@ -87,11 +86,13 @@ const generateFileUrl = () => {
   return fileUrl;
 };
 const openAvatarDialog = async () => {
+  await initSTS();
   isAvatar.value = true;
   imageUrl.value = userInfo.value.avatarImage;
   selectImageDialogVisible.value = true;
 };
 const openBackgroundDialog = async () => {
+  await initSTS();
   isAvatar.value = false;
   imageUrl.value = userInfo.value.backgroundImage;
   selectImageDialogVisible.value = true;
@@ -187,6 +188,10 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("resize", updateWindowWidth);
 });
+
+const handleAvatarClick = () => {
+  openDialog();
+};
 </script>
 
 <template>
@@ -207,6 +212,8 @@ onUnmounted(() => {
             :size="100"
             :src="isAuthor ? userInfo.avatarImage : userInfoData.avatarImage"
             class="avatar"
+            style="cursor: pointer"
+            @click="handleAvatarClick"
           />
 
           <div class="info-content">
@@ -338,7 +345,7 @@ onUnmounted(() => {
 }
 
 .profile-card {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   border-radius: 12px;

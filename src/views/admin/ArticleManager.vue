@@ -1,52 +1,40 @@
 <script setup>
 import { ref } from "vue";
+import { getArticleDetailService } from "../../api/admin"; //这里不同于article.js，不需要验证权限
 import { useRoute, useRouter } from "vue-router";
 import { ArrowLeft, Clock } from "@element-plus/icons-vue";
 import { MdPreview } from "md-editor-v3";
 import "md-editor-v3/lib/preview.css";
-import { useUserInfoStore } from "../../store/userInfo";
 import {
-  getArticleDetailService,
-  publishArticleService,
-  checkService
-} from "../../api/article";
-import { ElMessage } from "element-plus";
-const userInfoStore = useUserInfoStore();
+  acceptArticleService,
+  rejectArticleService,
+  dropArticleService
+} from "../../api/admin";
+import { ElMessage, ElMessageBox } from "element-plus";
 const route = useRoute();
 const router = useRouter();
 const articleData = ref({
   articleId: "",
   categoryId: "",
+  author: "",
   title: "",
   content: "",
   status: "",
   createTime: "",
   updateTime: ""
 });
+const isPublished = ref(false); // 是否已发布
 const getArticleDetail = async () => {
   const articleId = route.query.articleId;
-  const categoryId = route.query.categoryId;
   const result = await getArticleDetailService({
-    articleId: articleId,
-    categoryId: categoryId
+    articleId: articleId
   });
   articleData.value = result.data;
+  articleData.value.author = route.query.author;
+  isPublished.value = articleData.value.status === "published";
 };
 getArticleDetail();
 
-const isAuthor = ref(false); //判断当前浏览文章的人是不是写文章的人
-const author = ref(""); //写文章的人
-const check = async () => {
-  const categoryId = route.query.categoryId;
-  const result = await checkService({
-    categoryId: categoryId
-  });
-  isAuthor.value = result.data;
-  author.value = isAuthor.value
-    ? userInfoStore.userInfo.username
-    : route.query.author;
-};
-check();
 const getStatusType = (status) => {
   switch (status) {
     case "published":
@@ -64,10 +52,10 @@ const getStatusText = (status) => {
   switch (status) {
     case "published":
       return "已发布";
-    case "draft":
-      return "草稿";
     case "pending":
       return "待审核";
+    case "draft":
+      return "草稿";
     default:
       return "未知状态";
   }
@@ -77,29 +65,56 @@ const goBack = () => {
   router.go(-1);
 };
 
-const handlePublish = async () => {
-  try {
-    await publishArticleService({
-      articleId: articleData.value.articleId,
-      categoryId: articleData.value.categoryId
-    });
-    ElMessage.success("发布成功");
-    getArticleDetail(); // 刷新文章状态
-  } catch (error) {
-    ElMessage.error("发布失败，请重试");
-  }
+const handleAccept = async () => {
+  // 接受文章逻辑
+  await acceptArticleService({
+    articleId: articleData.value.articleId
+  });
+  ElMessage.success("文章已接受");
+  await getArticleDetail(); // 刷新文章详情
 };
-
-const handleEdit = () => {
-  const currentPath = router.currentRoute.value.fullPath;
-  router.push({
-    name: "ArticleEdit",
-    query: {
-      articleId: articleData.value.articleId,
-      categoryId: articleData.value.categoryId,
-      redirect: currentPath,
-      type: "edit"
+const handleReject = async () => {
+  ElMessageBox.confirm(
+    `确定要拒绝${articleData.value.author}发布的 ${
+      articleData.value.title.length > 10
+        ? articleData.value.title.slice(0, 10) + "..."
+        : articleData.value.title
+    } 吗`,
+    "警告",
+    {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
     }
+  ).then(async () => {
+    // 拒绝文章逻辑
+    await rejectArticleService({
+      articleId: articleData.value.articleId
+    });
+    ElMessage.success("文章已拒绝");
+    await getArticleDetail(); // 刷新文章详情
+  });
+};
+const handleDrop = async () => {
+  ElMessageBox.confirm(
+    `下架${articleData.value.author}发布的 ${
+      articleData.value.title.length > 10
+        ? articleData.value.title.slice(0, 10) + "..."
+        : articleData.value.title
+    } 吗`,
+    "警告",
+    {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
+    }
+  ).then(async () => {
+    // 下架文章逻辑
+    await dropArticleService({
+      articleId: articleData.value.articleId
+    });
+    ElMessage.success("文章已下架");
+    await getArticleDetail(); // 刷新文章详情
   });
 };
 
@@ -136,41 +151,24 @@ const handleAuthorClick = (authorName) => {
               {{ getStatusText(articleData.status) }}
             </el-tag>
           </div>
-          <div class="meta-item author-info" @click="handleAuthorClick(author)">
+          <div
+            class="meta-item author-info"
+            @click="handleAuthorClick(articleData.author)"
+          >
             <span class="label">作者：</span>
-            <span>{{ author }}</span>
+            <span>{{ articleData.author }}</span>
           </div>
         </div>
-        <div class="right-meta" v-if="isAuthor">
-          <el-button
-            type="primary"
-            @click="handlePublish"
-            :disabled="articleData.status === 'published'"
-            v-if="articleData.status === 'draft'"
+        <div class="right-meta" v-if="articleData.status !== 'draft'">
+          <el-button type="primary" v-if="!isPublished" @click="handleAccept"
+            >接受</el-button
           >
-            发布
-          </el-button>
-          <el-button
-            type="info"
-            disabled
-            v-else-if="articleData.status === 'published'"
+          <el-button type="danger" v-if="!isPublished" @click="handleReject"
+            >拒绝</el-button
           >
-            已发布
-          </el-button>
-          <el-button
-            type="warning"
-            disabled
-            v-else-if="articleData.status === 'pending'"
+          <el-button type="danger" v-if="isPublished" @click="handleDrop"
+            >下架</el-button
           >
-            审核中
-          </el-button>
-          <el-button
-            type="primary"
-            @click="handleEdit"
-            v-if="articleData.status !== 'pending'"
-          >
-            修改文章
-          </el-button>
         </div>
       </div>
 
