@@ -1,7 +1,4 @@
 <script setup>
-import { useRouter } from "vue-router";
-import { storeToRefs } from "pinia";
-import { useUserInfoStore } from "../../store/userInfo";
 import {
   getPendingArticleListService,
   getPublishedArticleListService
@@ -9,14 +6,11 @@ import {
 import { getAuthorNameService } from "../../api/community";
 import { ref } from "vue";
 import LeftMenu from "../../components/LeftMenu.vue";
+import ArticleCard from "../../components/ArticleCard.vue";
+import { check } from "../../utils/admin/check";
+import { useRouter } from "vue-router";
+check();
 const router = useRouter();
-const userInfoStore = useUserInfoStore();
-const { userInfo } = storeToRefs(userInfoStore);
-if (userInfo.value.username !== "admin") {
-  router.push({
-    name: "NotFound"
-  });
-}
 const articleList = ref([
   {
     articleId: "",
@@ -91,42 +85,14 @@ const getArticleList = async () => {
   loading.value = false;
 };
 getArticleList();
-// 内容格式化
-const formatContent = (content) => {
-  if (!content) return "";
-  return content.length > 10 ? content.slice(0, 10) + "..." : content;
-};
-const formatTitle = (title) => {
-  if (!title) return "";
-  return title.length > 10 ? title.slice(0, 10) + "..." : title;
-};
-const getStatusType = (status) => {
-  switch (status) {
-    case "published":
-      return "success";
-    case "pending":
-      return "warning";
-    default:
-      return "info";
-  }
-};
-const getStatusText = (status) => {
-  switch (status) {
-    case "published":
-      return "已发布";
-    case "pending":
-      return "待审核";
-    default:
-      return "未知状态";
-  }
-};
-const handleRowClick = (rowData) => {
+
+const handleRowClick = (item) => {
   router.push({
     name: "ArticleDetailManager",
     query: {
-      articleId: rowData.articleId,
-      categoryId: rowData.categoryId,
-      author: rowData.author
+      articleId: item.articleId,
+      categoryId: item.categoryId,
+      author: item.author
     }
   });
 };
@@ -134,100 +100,20 @@ const handleRowClick = (rowData) => {
 
 <template>
   <LeftMenu>
-    <!-- 表格区域 -->
-    <div class="article-list-container">
-      <el-card class="table-card">
-        <el-table
-          :data="articleList"
-          style="width: auto"
-          border
-          :loading="loading"
-          @row-click="handleRowClick"
-        >
-          <el-table-column prop="articleId" label="ID"></el-table-column>
-          <el-table-column prop="categoryId" label="categoryId">
-            <template #default="{ row }">
-              {{ formatContent(row.categoryId) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="author" label="作者">
-            <template #default="{ row }">
-              {{ formatContent(row.author) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="title" label="标题">
-            <template #default="{ row }">
-              {{ formatTitle(row.title) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="content" label="内容">
-            <template #default="{ row }">
-              {{ formatContent(row.content) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="status" label="状态">
-            <template #default="{ row }">
-              <el-tag :type="getStatusType(row.status)">
-                {{ getStatusText(row.status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="createTime" label="创建时间">
-            <template #default="{ row }">
-              {{ new Date(row.createTime).toLocaleDateString() }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="updateTime" label="更新时间">
-            <template #default="{ row }">
-              {{ new Date(row.updateTime).toLocaleDateString() }}
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-card>
+    <div class="article-list">
+      <ArticleCard
+        v-for="item in articleList"
+        :article="item"
+        :key="item.articleId"
+        :onClick="() => handleRowClick(item)"
+      />
     </div>
   </LeftMenu>
 </template>
 
 <style scoped>
-.article-list-container {
-  padding: 20px;
-  background-color: #f5f7fa;
-  min-height: calc(100vh - 60px);
-}
-.table-card {
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.title-text {
-  font-weight: 500;
-  color: #409eff;
-}
-
-.content-text {
-  color: #606266;
-}
-
-.el-table {
-  font-size: 14px;
-}
-
-.el-table :deep(.el-table__cell) {
-  padding: 12px 0;
-}
-
-.el-tag {
-  font-weight: 500;
-}
-
-/* 鼠标悬停行效果 */
-.el-table :deep(.el-table__row:hover) {
-  background-color: #f5f7fa !important;
-  cursor: pointer;
-}
-
-/* 当前行高亮效果 */
-.el-table :deep(.current-row) {
-  background-color: #ecf5ff !important;
+.article-list {
+  display: grid;
+  gap: 20px;
 }
 </style>

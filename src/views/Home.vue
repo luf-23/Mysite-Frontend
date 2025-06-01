@@ -83,7 +83,7 @@ if (userInfo.value.username === "admin") {
   quickActions.value.push({
     title: "管理员入口",
     icon: markRaw(HotWater),
-    path: "/admin/list",
+    path: "/admin/home",
     color: "#666666",
     description: "提供管理员相关接口"
   });

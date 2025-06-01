@@ -1,5 +1,6 @@
 <script setup>
 import { ref, reactive } from "vue";
+import ArticleCard from "../components/ArticleCard.vue";
 import {
   getAuthorNameService,
   getCommunityListService,
@@ -39,7 +40,6 @@ const getCommunityList = async () => {
       const authorName = await getAuthorName({
         categoryId: item.categoryId
       });
-      console.log(111);
       item.author = authorName;
     }
     communityList.value.sort((a, b) => {
@@ -126,10 +126,8 @@ const handleSearch = async function () {
               style="width: 300px"
             />
           </el-form-item>
-          <el-form-item>
+          <div class="button-group">
             <el-button type="primary" @click="handleSearch">搜索</el-button>
-          </el-form-item>
-          <el-form-item>
             <el-button
               @click="
                 searchForm.title = '';
@@ -137,41 +135,19 @@ const handleSearch = async function () {
               "
               >重置</el-button
             >
-          </el-form-item>
+          </div>
         </el-form>
       </div>
     </div>
 
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else class="article-list">
-      <div
+      <ArticleCard
         v-for="item in communityList"
         :key="item.articleId"
-        @click="handleRowClick(item)"
-        class="article-card"
-      >
-        <h2 class="article-title">{{ item.title }}</h2>
-        <div class="article-info">
-          <span class="author">作者：{{ item.author }}</span>
-          <span class="time"
-            >发布时间：{{
-              new Date(item.createTime).toLocaleDateString()
-            }}</span
-          >
-          <span class="time"
-            >更新时间：{{
-              new Date(item.updateTime).toLocaleDateString()
-            }}</span
-          >
-        </div>
-        <p class="article-content">
-          {{
-            item.content.length > 100
-              ? item.content.substring(0, 100) + "..."
-              : item.content
-          }}
-        </p>
-      </div>
+        :article="item"
+        :onClick="() => handleRowClick(item)"
+      />
     </div>
   </div>
 </template>
@@ -190,40 +166,6 @@ const handleSearch = async function () {
 .article-list {
   display: grid;
   gap: 20px;
-}
-
-.article-card {
-  padding: 20px;
-  border-radius: 8px;
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.article-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-}
-
-.article-title {
-  margin: 0 0 10px 0;
-  font-size: 18px;
-  color: #333;
-}
-
-.article-info {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: #666;
-}
-
-.article-content {
-  margin: 0;
-  line-height: 1.6;
-  color: #555;
 }
 
 .fixed-header {
@@ -250,6 +192,7 @@ const handleSearch = async function () {
   max-width: 1000px;
   margin: 0 auto;
 }
+
 @media screen and (max-width: 768px) {
   .fixed-header {
     position: relative;
@@ -265,6 +208,23 @@ const handleSearch = async function () {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    width: 100%;
+  }
+
+  .button-group .el-button {
+    flex: 1;
+  }
+
+  .search-form :deep(.el-form-item) {
+    margin-bottom: 8px;
+    margin-right: 0;
+    width: 100%;
   }
 }
 </style>

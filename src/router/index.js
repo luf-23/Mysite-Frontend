@@ -13,6 +13,8 @@ import Announcement from "../views/Announcement.vue";
 import Chat from "../views/ai/Chat.vue";
 import ArticleListManager from "../views/admin/ArticleListManager.vue";
 import ArticleManager from "../views/admin/ArticleManager.vue";
+import UseManager from "../views/admin/UseManager.vue";
+import AdminHome from "../views/admin/AdminHome.vue";
 const routes = [
   {
     path: "/login",
@@ -128,6 +130,14 @@ const routes = [
     },
     children: [
       {
+        path: "home",
+        name: "AdminHome",
+        meta: {
+          title: "管理员界面"
+        },
+        component: AdminHome
+      },
+      {
         path: "list",
         name: "ArticleListManager",
         meta: {
@@ -142,6 +152,14 @@ const routes = [
           title: "文章详情"
         },
         component: ArticleManager
+      },
+      {
+        path: "user",
+        name: "UserManager",
+        meta: {
+          title: "管理用户信息"
+        },
+        component: UseManager
       }
     ]
   }

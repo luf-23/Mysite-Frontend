@@ -11,6 +11,8 @@ import {
   dropArticleService
 } from "../../api/admin";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { check } from "../../utils/admin/check";
+check();
 const route = useRoute();
 const router = useRouter();
 const articleData = ref({

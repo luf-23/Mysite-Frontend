@@ -63,3 +63,10 @@ export function getArticleDetailService(params) {
     }
   });
 }
+
+export function getUsersService() {
+  return request({
+    url: "/admin/users",
+    method: "get"
+  });
+}

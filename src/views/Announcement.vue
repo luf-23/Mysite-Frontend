@@ -4,6 +4,13 @@ import { ref } from "vue";
 const announcements = ref([
   {
     id: 1,
+    title: "新功能发布",
+    content: "头像背景图片上传功能已实现。",
+    date: "2025-05-26",
+    type: "success"
+  },
+  {
+    id: 2,
     title: "系统更新通知",
     content:
       "系统将于2025年5月4日晚上8点到11点进行维护升级，届时系统将暂停服务3小时。",
@@ -11,28 +18,28 @@ const announcements = ref([
     type: "warning"
   },
   {
-    id: 2,
+    id: 3,
     title: "新功能发布",
     content: "文章相关所有接口均已实现，欢迎体验！",
     date: "2025-05-03",
     type: "success"
   },
   {
-    id: 3,
+    id: 4,
     title: "新功能发布",
     content: "个人信息查看和修改功能已实现，欢迎体验！",
     date: "2025-05-02",
     type: "success"
   },
   {
-    id: 4,
+    id: 5,
     title: "温馨提示",
     content: "请注意保护个人隐私，不要随意泄露账号信息。",
     date: "2025-05-02",
     type: "warning"
   },
   {
-    id: 5,
+    id: 6,
     title: "温馨提示",
     content: "电脑端体验更佳，建议使用Chrome浏览器访问。",
     date: "2025-05-01",

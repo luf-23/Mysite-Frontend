@@ -2,6 +2,7 @@
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import LeftMenu from "../../components/LeftMenu.vue";
+import CategoryCard from "../../components/CategoryCard.vue";
 import {
   getCategoryListService,
   addCategoryService,
@@ -27,24 +28,6 @@ const getArticleCategoryList = async () => {
   );
 };
 getArticleCategoryList();
-
-// 设置单元格的class和data-label
-const setCellClass = ({ column }) => {
-  if (!column) return "";
-
-  switch (column.property) {
-    case "name":
-      return "cell-name";
-    case "description":
-      return "cell-description";
-    case "createTime":
-      return "cell-create-time";
-    case "updateTime":
-      return "cell-update-time";
-    default:
-      return "";
-  }
-};
 
 // 新增分类
 const dialogForAdd = ref(false);
@@ -212,31 +195,21 @@ const handleRowClick = (rowData) => {
       <h2 class="page-title">文章分类</h2>
       <el-button type="primary" @click="handleAdd">添加分类</el-button>
     </div>
-    <div class="table-container">
-      <el-table
-        :data="tableData"
-        style="width: 100%"
-        @row-click="handleRowClick"
-        :cell-class-name="setCellClass"
-      >
-        <el-table-column prop="name" label="分类名" min-width="150" />
-        <el-table-column prop="description" label="描述" min-width="300" />
-        <el-table-column prop="createTime" label="创建时间" min-width="200" />
-        <el-table-column prop="updateTime" label="修改时间" min-width="200" />
-        <el-table-column label="操作" min-width="150">
-          <template #default="scope">
-            <el-button size="small" @click.stop="handleEdit(scope.row)"
-              >编辑</el-button
-            >
-            <el-button
-              size="small"
-              type="danger"
-              @click.stop="handleDelete(scope.row)"
-              >删除</el-button
-            >
-          </template>
-        </el-table-column>
-      </el-table>
+
+    <div class="category-grid">
+      <CategoryCard
+        v-for="item in tableData"
+        :key="item.id"
+        :category="{
+          name: item.name,
+          description: item.description,
+          createTime: item.createTime,
+          updateTime: item.updateTime
+        }"
+        @click="handleRowClick(item)"
+        @edit="handleEdit(item)"
+        @delete="handleDelete(item)"
+      />
     </div>
 
     <!-- 添加分类对话框 -->
@@ -334,62 +307,14 @@ const handleRowClick = (rowData) => {
   border-radius: 4px;
 }
 
-.table-container {
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 24px;
   background: white;
   border-radius: 8px;
-  padding: 24px;
   box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
-}
-
-:deep(.el-table) {
-  --el-table-border-color: #e0e3e9;
-  --el-table-header-bg-color: #f0f2f5;
-  --el-table-row-hover-bg-color: #f0f7ff;
-}
-
-:deep(.el-table th) {
-  font-weight: 600;
-  color: #1a1a1a;
-  background-color: #f0f2f5;
-  padding: 14px 0;
-}
-
-:deep(.el-table td) {
-  padding: 16px 0;
-  color: #333333;
-  font-weight: 500;
-}
-
-:deep(.el-table__row) {
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-bottom: 1px solid #ebeef5;
-}
-
-:deep(.el-table__row:hover) {
-  background-color: #e6f0fc !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-:deep(.el-button) {
-  transition: all 0.3s ease;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-weight: 500;
-}
-
-:deep(.el-button:hover) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-:deep(.el-button--primary) {
-  background: linear-gradient(135deg, #3a8ee6 0%, #0056b3 100%);
-}
-
-:deep(.el-button--danger) {
-  background: linear-gradient(135deg, #f56c6c 0%, #d63031 100%);
 }
 
 :deep(.el-dialog) {
@@ -431,121 +356,30 @@ const handleRowClick = (rowData) => {
   border-radius: 6px;
 }
 
-@media screen and (max-width: 768px) {
-  .table-container {
-    width: 100%;
-    overflow-x: hidden;
-    position: relative;
-    padding: 10px;
-    margin: 0;
-    -webkit-overflow-scrolling: touch;
-  }
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 
-  :deep(.el-table) {
-    background: none;
-  }
-
-  :deep(.el-table__header-wrapper) {
-    display: none;
-  }
-
-  :deep(.el-table__body-wrapper) {
-    width: 100% !important;
-    overflow: visible !important;
-  }
-
-  :deep(.el-table__row) {
-    width: 200% !important;
-    display: block !important;
-    margin-bottom: 10px !important;
-    padding: 12px !important;
-    background: #fff !important;
-    border-radius: 8px !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-    box-sizing: border-box !important;
-    transform: none !important;
-  }
-
-  :deep(.el-table__cell) {
-    display: flex !important;
-    flex: 1 !important;
-    padding: 8px !important;
-    border: none !important;
-    width: 100% !important;
-  }
-
-  :deep(.cell) {
-    display: flex !important;
-    width: 100% !important;
-    align-items: center !important;
-  }
-
-  /* 标签样式 */
-  :deep(.cell-name)::before,
-  :deep(.cell-description)::before,
-  :deep(.cell-create-time)::before,
-  :deep(.cell-update-time)::before {
-    flex: 0 0 85px !important;
-    font-weight: 600 !important;
-    color: #606266 !important;
-  }
-
-  :deep(.cell-name)::before {
-    content: "分类名：";
-  }
-  :deep(.cell-description)::before {
-    content: "描述：";
-  }
-  :deep(.cell-create-time)::before {
-    content: "创建时间：";
-  }
-  :deep(.cell-update-time)::before {
-    content: "更新时间：";
-  }
-
-  /* 内容样式 */
-  :deep(.cell > span) {
-    flex: 1 !important;
-    min-width: 0 !important;
-    word-break: break-all !important;
-  }
-
-  /* 操作按钮区域 */
-  :deep(.el-table__cell:last-child) {
-    border-top: 1px solid #ebeef5 !important;
-    margin-top: 8px !important;
-    padding-top: 12px !important;
-  }
-
-  :deep(.el-table__cell:last-child .cell) {
-    justify-content: flex-end !important;
-    gap: 8px !important;
-  }
+.view-toggle {
+  margin-left: 16px;
 }
 
 @media screen and (max-width: 768px) {
+  .category-grid {
+    grid-template-columns: 1fr;
+    padding: 10px;
+    gap: 15px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
   :deep(.el-dialog) {
     width: 90% !important;
     margin: 0 auto;
   }
-}
-
-:deep(.el-message-box) {
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-:deep(.el-message-box__header) {
-  padding: 20px 24px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-:deep(.el-message-box__content) {
-  padding: 24px;
-}
-
-:deep(.el-message-box__btns) {
-  padding: 16px 24px;
-  border-top: 1px solid #ebeef5;
 }
 </style>

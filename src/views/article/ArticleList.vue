@@ -378,6 +378,35 @@ const handleAdd = () => {
   padding: 24px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
   margin-top: 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* 添加iOS滑动优化 */
+}
+
+/* 确保表格容器在移动端正确处理 */
+:deep(.el-table) {
+  width: 100% !important;
+  min-width: 800px; /* 设置最小宽度确保内容完整显示 */
+}
+
+/* 优化移动端滑动体验 */
+@media screen and (max-width: 768px) {
+  .article-list {
+    padding: 12px;
+    margin: 0;
+    border-radius: 0;
+    max-width: 100vw;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .article-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+
+  :deep(.el-table::before) {
+    display: none;
+  }
 }
 
 .article-list-container {
