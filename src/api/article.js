@@ -109,3 +109,14 @@ export function checkService(params) {
     }
   });
 }
+
+export function updateCoverImageService(params) {
+  return request({
+    url: "/article/updateCoverImage",
+    method: "post",
+    params,
+    headers: {
+      ContentType: "application/xxx-www-form-urlencoded"
+    }
+  });
+}

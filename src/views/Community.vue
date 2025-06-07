@@ -11,7 +11,7 @@ import { ElMessage } from "element-plus";
 const router = useRouter();
 const communityList = ref([]);
 
-const loading = ref(true);
+const loading = ref(false);
 const getAuthorName = async (categoryId) => {
   try {
     const result = await getAuthorNameService(categoryId);
@@ -33,7 +33,8 @@ const getCommunityList = async () => {
         content: item.content,
         author: "",
         createTime: item.createTime,
-        updateTime: item.updateTime
+        updateTime: item.updateTime,
+        coverImage: item.coverImage
       };
     });
     for (const item of communityList.value) {
@@ -52,6 +53,7 @@ const getCommunityList = async () => {
   }
 };
 getCommunityList();
+
 const handleRowClick = (item) => {
   router.push({
     name: "ArticleDetail",
@@ -84,7 +86,8 @@ const handleSearch = async function () {
         content: item.content,
         author: "",
         createTime: item.createTime,
-        updateTime: item.updateTime
+        updateTime: item.updateTime,
+        coverImage: item.coverImage
       };
     });
     for (const item of communityList.value) {

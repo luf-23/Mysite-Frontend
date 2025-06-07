@@ -9,12 +9,8 @@ import {
   getUserInfoByNameService,
   updateUserInfoService
 } from "../api/user.js";
-import {
-  getCredentialsService,
-  getBucketService,
-  getEndPointService
-} from "../api/oss.js";
-import OSS from "ali-oss";
+import { ossClient } from "../utils/oss";
+
 const route = useRoute();
 const author = route.query.author ? route.query.author : null;
 const userInfoStore = useUserInfoStore();
@@ -48,54 +44,32 @@ if (author && author !== userInfo.value.username) {
 }
 
 const selectImageDialogVisible = ref(false);
-const isAvatar = ref(false);
 const imageUrl = ref(null); //只做临时展示预览
 const selectedFile = ref(null);
-const STS = reactive({
-  credentials: [],
-  bucket: "",
-  endPoint: ""
-});
-let client;
-const initSTS = async () => {
-  const credentials = await getCredentialsService();
-  const bucket = await getBucketService();
-  const endPoint = await getEndPointService();
-  STS.credentials = credentials.data;
-  STS.bucket = bucket.data;
-  STS.endPoint = endPoint.data;
-  //初始化oss
-  client = new OSS({
-    endpoint: STS.endPoint,
-    accessKeyId: STS.credentials.accessKeyId,
-    accessKeySecret: STS.credentials.accessKeySecret,
-    stsToken: STS.credentials.securityToken,
-    bucket: STS.bucket
-  });
-};
-const generateFileName = () => {
-  // 生成文件名（避免重复）
-  const extension = selectedFile.value.name.split(".").pop();
-  const fileName = isAvatar.value
-    ? `avatar/${userInfo.value.userId}.${extension}`
-    : `background/${userInfo.value.userId}.${extension}`;
-  return fileName;
-};
-const generateFileUrl = () => {
-  const fileUrl = `http://${STS.bucket}.${STS.endPoint}/` + generateFileName();
-  return fileUrl;
-};
+let fileName = ""; // 用于存储生成的文件名
+const isAvatar = ref(false);
+
 const openAvatarDialog = async () => {
-  await initSTS();
+  await ossClient.init();
   isAvatar.value = true;
   imageUrl.value = userInfo.value.avatarImage;
   selectImageDialogVisible.value = true;
 };
 const openBackgroundDialog = async () => {
-  await initSTS();
+  await ossClient.init();
   isAvatar.value = false;
   imageUrl.value = userInfo.value.backgroundImage;
   selectImageDialogVisible.value = true;
+};
+const generateFileName = () => {
+  const extension = selectedFile.value.name.split(".").pop();
+  const type = isAvatar.value
+    ? ossClient.constructor.IMAGE_TYPE.AVATAR
+    : ossClient.constructor.IMAGE_TYPE.BACKGROUND;
+  return ossClient.generateFileName(userInfo.value.userId, type, extension);
+};
+const generateFileUrl = () => {
+  return ossClient.generateFileUrl(fileName);
 };
 const handleFileChange = (event) => {
   if (event.target && event.target.files) {
@@ -111,11 +85,11 @@ const closeImageDialog = () => {
   selectImageDialogVisible.value = false;
 };
 const uploadImage = async () => {
-  const fileName = generateFileName();
-  // 上传文件
-  await client.put(fileName, selectedFile.value);
+  await ossClient.uploadFile(fileName, selectedFile.value);
 };
 const submitImage = async () => {
+  fileName = generateFileName();
+  console.log("生成的文件名:", fileName);
   if (isAvatar.value) formData.avatarImage = generateFileUrl();
   else formData.backgroundImage = generateFileUrl();
   closeImageDialog();

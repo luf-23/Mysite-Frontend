@@ -128,6 +128,20 @@ const handleAuthorClick = (authorName) => {
     }
   });
 };
+
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+};
 </script>
 
 <template>
@@ -180,11 +194,11 @@ const handleAuthorClick = (authorName) => {
         <div class="time-info">
           <span class="time-item">
             <el-icon><clock /></el-icon>
-            创建时间：{{ articleData.createTime }}
+            创建时间：{{ formatDate(articleData.createTime) }}
           </span>
           <span class="time-item">
             <el-icon><clock /></el-icon>
-            更新时间：{{ articleData.updateTime }}
+            更新时间：{{ formatDate(articleData.updateTime) }}
           </span>
         </div>
 

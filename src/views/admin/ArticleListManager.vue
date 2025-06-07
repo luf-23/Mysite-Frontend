@@ -20,7 +20,8 @@ const articleList = ref([
     content: "",
     status: "", //pending or published
     createTime: "",
-    updateTime: ""
+    updateTime: "",
+    coverImage: ""
   }
 ]);
 const getAuthorName = async (categoryId) => {
@@ -47,7 +48,8 @@ const getArticleList = async () => {
       content: item.content,
       status: item.status,
       createTime: item.createTime,
-      updateTime: item.updateTime
+      updateTime: item.updateTime,
+      coverImage: item.coverImage
     };
   });
   for (const item of pendingList.value) {
@@ -66,7 +68,8 @@ const getArticleList = async () => {
       content: item.content,
       status: item.status,
       createTime: item.createTime,
-      updateTime: item.updateTime
+      updateTime: item.updateTime,
+      coverImage: item.coverImage
     };
   });
   for (const item of publishedList.value) {
@@ -115,5 +118,8 @@ const handleRowClick = (item) => {
 .article-list {
   display: grid;
   gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  padding: 20px;
+  max-width: 100%;
 }
 </style>

@@ -11,7 +11,8 @@ const props = defineProps({
       content: "",
       articleId: "",
       categoryId: "",
-      status: ""
+      status: "",
+      coverImage: "" // 添加封面图属性
     })
   },
   onClick: {
@@ -19,6 +20,10 @@ const props = defineProps({
     default: () => {}
   },
   onDelete: {
+    type: Function,
+    default: () => {}
+  },
+  onChangeCoverImage: {
     type: Function,
     default: () => {}
   },
@@ -31,6 +36,10 @@ const props = defineProps({
     default: true
   },
   showDelete: {
+    type: Boolean,
+    default: false
+  },
+  showChangeCoverImage: {
     type: Boolean,
     default: false
   }
@@ -57,10 +66,18 @@ const handleDelete = (e) => {
   e.stopPropagation(); // 阻止事件冒泡，避免触发card的click事件
   props.onDelete();
 };
+
+const handleChangeCoverImage = (e) => {
+  e.stopPropagation(); // 阻止事件冒泡，避免触发card的click事件
+  props.onChangeCoverImage();
+};
 </script>
 
 <template>
   <div class="article-card" @click="onClick">
+    <div v-if="article.coverImage" class="article-cover">
+      <img :src="article.coverImage" :alt="article.title" />
+    </div>
     <div class="article-header">
       <h2 class="article-title">{{ article.title }}</h2>
       <div class="header-actions">
@@ -73,6 +90,13 @@ const handleDelete = (e) => {
         </span>
         <button v-if="showDelete" class="delete-btn" @click="handleDelete">
           删除
+        </button>
+        <button
+          v-if="showChangeCoverImage"
+          class="change-cover-btn"
+          @click="handleChangeCoverImage"
+        >
+          更改封面
         </button>
       </div>
     </div>
@@ -118,6 +142,24 @@ const handleDelete = (e) => {
 .article-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
+}
+
+.article-cover {
+  margin: -20px -20px 15px -20px;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 8px 8px 0 0;
+}
+
+.article-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.article-card:hover .article-cover img {
+  transform: scale(1.05);
 }
 
 .article-header {
@@ -182,6 +224,22 @@ const handleDelete = (e) => {
   background-color: #ffcdd2;
 }
 
+.change-cover-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #e3f2fd;
+  color: #1565c0;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.change-cover-btn:hover {
+  background-color: #bbdefb;
+}
+
 .article-meta {
   display: flex;
   gap: 15px;
@@ -225,6 +283,11 @@ const handleDelete = (e) => {
 @media screen and (max-width: 768px) {
   .article-card {
     padding: 15px;
+  }
+
+  .article-cover {
+    margin: -15px -15px 12px -15px;
+    height: 150px;
   }
 
   .article-header {
