@@ -17,22 +17,83 @@ const props = defineProps({
   onClick: {
     type: Function,
     default: () => {}
+  },
+  onDelete: {
+    type: Function,
+    default: () => {}
+  },
+  showCategoryId: {
+    type: Boolean,
+    default: true
+  },
+  showStatus: {
+    type: Boolean,
+    default: true
+  },
+  showDelete: {
+    type: Boolean,
+    default: false
   }
 });
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString();
 };
+
+const statusColor = (status) => {
+  switch (status) {
+    case "draft":
+      return "gray";
+    case "pending":
+      return "orange";
+    case "published":
+      return "green";
+    default:
+      return "gray";
+  }
+};
+
+const handleDelete = (e) => {
+  e.stopPropagation(); // 阻止事件冒泡，避免触发card的click事件
+  props.onDelete();
+};
 </script>
 
 <template>
   <div class="article-card" @click="onClick">
-    <h2 class="article-title">{{ article.title }}</h2>
+    <div class="article-header">
+      <h2 class="article-title">{{ article.title }}</h2>
+      <div class="header-actions">
+        <span
+          v-if="showStatus"
+          class="status-tag"
+          :class="statusColor(article.status)"
+        >
+          {{ article.status }}
+        </span>
+        <button v-if="showDelete" class="delete-btn" @click="handleDelete">
+          删除
+        </button>
+      </div>
+    </div>
+
+    <div class="article-meta">
+      <div class="meta-item">
+        <span class="meta-label">ID:</span>
+        <span class="meta-value">{{ article.articleId }}</span>
+      </div>
+      <div class="meta-item" v-if="showCategoryId">
+        <span class="meta-label">分类ID:</span>
+        <span class="meta-value">{{ article.categoryId }}</span>
+      </div>
+    </div>
+
     <div class="article-info">
       <span class="author">作者：{{ article.author }}</span>
       <span class="time">发布时间：{{ formatDate(article.createTime) }}</span>
       <span class="time">更新时间：{{ formatDate(article.updateTime) }}</span>
     </div>
+
     <p class="article-content">
       {{
         article.content?.length > 100
@@ -51,6 +112,7 @@ const formatDate = (dateString) => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .article-card:hover {
@@ -58,12 +120,89 @@ const formatDate = (dateString) => {
   transform: translateY(-2px);
 }
 
+.article-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 10px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .article-title {
-  margin: 0 0 10px 0;
+  margin: 0;
   font-size: 18px;
   color: #333;
   word-break: break-all;
   overflow-wrap: break-word;
+  flex: 1;
+}
+
+.status-tag {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.status-tag.gray {
+  background-color: #e0e0e0;
+  color: #616161;
+}
+
+.status-tag.orange {
+  background-color: #ffe0b2;
+  color: #e65100;
+}
+
+.status-tag.green {
+  background-color: #c8e6c9;
+  color: #2e7d32;
+}
+
+.delete-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #ffebee;
+  color: #c62828;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+  background-color: #ffcdd2;
+}
+
+.article-meta {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #666;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-label {
+  font-weight: bold;
+}
+
+.meta-value {
+  font-family: monospace;
 }
 
 .article-info {
@@ -86,6 +225,21 @@ const formatDate = (dateString) => {
 @media screen and (max-width: 768px) {
   .article-card {
     padding: 15px;
+  }
+
+  .article-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .status-tag {
+    align-self: flex-start;
   }
 
   .article-info {

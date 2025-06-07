@@ -1,9 +1,11 @@
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import LeftMenu from "../../components/LeftMenu.vue";
 import { check } from "../../utils/admin/check";
 import { getUsersService } from "../../api/admin";
 check();
+const router = useRouter();
 const userList = ref([
   {
     userId: "",
@@ -44,6 +46,14 @@ try {
 } finally {
   isLoading.value = false;
 }
+const handleClick = (item) => {
+  router.push({
+    name: "Profile",
+    query: {
+      author: item.username
+    }
+  });
+};
 </script>
 
 <template>
@@ -66,6 +76,7 @@ try {
               ? `url(${item.backgroundImage})`
               : 'none'
           }"
+          @click="() => handleClick(item)"
         >
           <div class="card-bg"></div>
 

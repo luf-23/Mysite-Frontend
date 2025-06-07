@@ -8,7 +8,7 @@ import { ElMessageBox } from "element-plus";
 import "github-markdown-css";
 import { getBaseURL } from "../../utils/request";
 import { useTokenStore } from "../../store/token";
-import { renderMarkdown } from "../../utils/markdown";
+import { renderMarkdown } from "../../utils/chatMarkdown";
 
 const chatStore = useChatStore();
 const { chatList, currentChatId } = storeToRefs(chatStore);

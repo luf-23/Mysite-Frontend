@@ -266,4 +266,58 @@ const handleWelcomeClick = () => {
 .main-content {
   cursor: pointer;
 }
+
+@media (max-width: 768px) {
+  .home-container {
+    padding: 0;
+  }
+
+  .main-content {
+    padding: 12px;
+  }
+
+  .welcome-section {
+    height: auto;
+    min-height: 160px;
+  }
+
+  .welcome-content {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+    gap: 12px;
+  }
+
+  .el-avatar {
+    flex-shrink: 0;
+  }
+
+  .welcome-text {
+    width: 100%;
+  }
+
+  .welcome-text h2 {
+    font-size: 18px;
+  }
+
+  .date-time {
+    width: 100%;
+    margin: 0;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 8px;
+  }
+
+  .welcome-content {
+    padding: 16px;
+  }
+
+  .welcome-text h2 {
+    font-size: 16px;
+  }
+}
 </style>

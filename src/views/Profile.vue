@@ -152,7 +152,9 @@ const submitForm = async () => {
   try {
     await formRef.value.validate();
     await updateUserInfo(formData);
-    await uploadImage();
+    if (selectedFile.value) {
+      await uploadImage();
+    }
     ElMessage.success("更新成功");
     closeDialog();
   } catch (error) {

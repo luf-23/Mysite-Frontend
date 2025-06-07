@@ -147,6 +147,8 @@ const handleSearch = async function () {
         :key="item.articleId"
         :article="item"
         :onClick="() => handleRowClick(item)"
+        :showCategoryId="false"
+        :showStatus="false"
       />
     </div>
   </div>
@@ -155,6 +157,8 @@ const handleSearch = async function () {
 <style scoped>
 .community-container {
   padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .loading {
@@ -165,7 +169,9 @@ const handleSearch = async function () {
 
 .article-list {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
+  padding: 10px;
 }
 
 .fixed-header {
@@ -194,6 +200,10 @@ const handleSearch = async function () {
 }
 
 @media screen and (max-width: 768px) {
+  .article-list {
+    grid-template-columns: 1fr;
+  }
+
   .fixed-header {
     position: relative;
     padding-bottom: 8px;
@@ -225,6 +235,12 @@ const handleSearch = async function () {
     margin-bottom: 8px;
     margin-right: 0;
     width: 100%;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .article-list {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

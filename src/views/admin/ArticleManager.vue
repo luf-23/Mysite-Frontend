@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import { getArticleDetailService } from "../../api/admin"; //这里不同于article.js，不需要验证权限
+import { getArticleDetailService } from "../../api/admin";
 import { useRoute, useRouter } from "vue-router";
 import { ArrowLeft, Clock } from "@element-plus/icons-vue";
 import { MdPreview } from "md-editor-v3";

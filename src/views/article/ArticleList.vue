@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted, onUnmounted } from "vue";
 import {
   deleteArticleService,
   getArticleListService,
@@ -7,29 +7,63 @@ import {
 } from "../../api/article.js";
 import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, ArrowLeft } from "@element-plus/icons-vue";
+import { Plus, ArrowLeft, ArrowDown, ArrowUp } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
+import ArticleCard from "../../components/ArticleCard.vue";
+
 const router = useRouter();
 const route = useRoute();
 const categoryId = route.query.categoryId;
 const tableData = ref([]);
+const loading = ref(false);
+const isSearchExpanded = ref(window.innerWidth > 768);
+
+// 监听窗口大小变化
+const handleResize = () => {
+  if (window.innerWidth <= 768) {
+    isSearchExpanded.value = false;
+  }
+};
+
+const toggleSearch = () => {
+  isSearchExpanded.value = !isSearchExpanded.value;
+};
+
+onMounted(() => {
+  window.addEventListener("resize", handleResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", handleResize);
+});
+
+// 获取文章列表
 const getArticleList = async () => {
-  const result = await getArticleListService({ categoryId: categoryId });
-  tableData.value = result.data.map((item) => {
-    return {
-      id: item.articleId,
-      title: item.title,
-      content: item.content,
-      status: item.status,
-      createTime: item.createTime,
-      updateTime: item.updateTime
-    };
-  });
+  loading.value = true;
+  try {
+    const result = await getArticleListService({ categoryId: categoryId });
+    tableData.value = result.data.map((item) => {
+      return {
+        id: item.articleId,
+        title: item.title,
+        content: item.content,
+        status: item.status,
+        createTime: item.createTime,
+        updateTime: item.updateTime
+      };
+    });
+  } catch (error) {
+    console.error("获取文章列表失败:", error);
+    ElMessage.error("获取文章列表失败");
+  } finally {
+    loading.value = false;
+  }
 };
 getArticleList();
 
+// 删除文章
 const handleDelete = async (row) => {
-  ElMessageBox.confirm(`确定要删除文章"${row.id}"吗？`, "警告", {
+  ElMessageBox.confirm(`确定要删除文章"${row.title}"吗？`, "警告", {
     confirmButtonText: "确定",
     cancelButtonText: "取消",
     type: "warning"
@@ -44,7 +78,6 @@ const handleDelete = async (row) => {
         if (index > -1) {
           tableData.value.splice(index, 1);
         }
-        //getArticleList();
       } catch (error) {
         console.error("删除失败:", error);
         ElMessage.error("删除失败，请重试");
@@ -54,17 +87,8 @@ const handleDelete = async (row) => {
       ElMessage.info("已取消删除");
     });
 };
-// 内容格式化
-const formatContent = (content) => {
-  if (!content) return "";
-  return content.length > 10 ? content.slice(0, 10) + "..." : content;
-};
-const formatTitle = (title) => {
-  if (!title) return "";
-  return title.length > 10 ? title.slice(0, 10) + "..." : title;
-};
 
-//搜索框
+// 搜索功能
 const searchForm = reactive({
   title: "",
   status: ""
@@ -76,55 +100,33 @@ const statusOptions = [
   { label: "待审核", value: "pending" }
 ];
 
-const getStatusType = (status) => {
-  switch (status) {
-    case "published":
-      return "success";
-    case "draft":
-      return "info";
-    case "pending":
-      return "warning";
-    default:
-      return "";
-  }
-};
-
-const getStatusText = (status) => {
-  switch (status) {
-    case "published":
-      return "已发布";
-    case "draft":
-      return "草稿";
-    case "pending":
-      return "待审核";
-    default:
-      return "未知状态";
-  }
-};
-
-const loading = ref(false);
-
 const handleSearch = async () => {
   loading.value = true;
-  const result = await getSelectedArticleListService({
-    title: searchForm.title,
-    status: searchForm.status,
-    categoryId: categoryId
-  });
-  tableData.value = result.data.map((item) => {
-    return {
-      id: item.articleId,
-      title: item.title,
-      content: item.content,
-      status: item.status,
-      createTime: item.createTime,
-      updateTime: item.updateTime
-    };
-  });
-  loading.value = false;
+  try {
+    const result = await getSelectedArticleListService({
+      title: searchForm.title,
+      status: searchForm.status,
+      categoryId: categoryId
+    });
+    tableData.value = result.data.map((item) => {
+      return {
+        id: item.articleId,
+        title: item.title,
+        content: item.content,
+        status: item.status,
+        createTime: item.createTime,
+        updateTime: item.updateTime
+      };
+    });
+  } catch (error) {
+    console.error("搜索失败:", error);
+    ElMessage.error("搜索失败");
+  } finally {
+    loading.value = false;
+  }
 };
 
-// 处理行点击事件
+// 查看文章详情
 const handleRowClick = (rowData) => {
   router.push({
     name: "ArticleDetail",
@@ -135,6 +137,7 @@ const handleRowClick = (rowData) => {
   });
 };
 
+// 添加新文章
 const handleAdd = () => {
   const currentPath = router.currentRoute.value.fullPath;
   router.push({
@@ -150,48 +153,52 @@ const handleAdd = () => {
 
 <template>
   <div class="article-container">
-    <!-- 头部标题和说明区域 -->
+    <!-- 头部区域 -->
     <div class="fixed-header">
-      <div class="header-section">
-        <div class="header-left">
-          <el-button
-            @click="$router.push('/article/category')"
-            class="back-button"
-          >
-            <el-icon><arrow-left /></el-icon>
-            返回
-          </el-button>
-        </div>
-        <div class="header-center">
-          <h2>文章管理</h2>
-          <div class="description">
-            在这里您可以管理所有的文章内容，包括添加、编辑和删除操作。
-          </div>
-        </div>
-        <div class="header-right">
-          <el-button type="primary" :icon="Plus" @click="handleAdd">
-            写文章
-          </el-button>
-        </div>
+      <div class="header-content">
+        <el-button
+          @click="$router.push('/article/category')"
+          class="back-button"
+          size="small"
+          :icon="ArrowLeft"
+          circle
+        />
+        <h2 class="header-title">文章管理</h2>
+        <el-button
+          type="primary"
+          :icon="Plus"
+          @click="handleAdd"
+          size="small"
+          circle
+          class="add-button"
+        />
       </div>
 
       <!-- 搜索区域 -->
-      <div class="search-section">
+      <div class="search-toggle" @click="toggleSearch">
+        <span>{{ isSearchExpanded ? "收起搜索" : "展开搜索" }}</span>
+        <el-icon>
+          <component :is="isSearchExpanded ? ArrowUp : ArrowDown" />
+        </el-icon>
+      </div>
+      <div
+        class="search-section"
+        :class="{ 'search-collapsed': !isSearchExpanded }"
+      >
         <el-form :inline="true" :model="searchForm" class="search-form">
           <el-form-item label="文章标题">
             <el-input
               v-model="searchForm.title"
               placeholder="请输入文章标题关键字"
               clearable
-              style="width: 300px"
             />
           </el-form-item>
           <el-form-item label="状态">
             <el-select
+              style="width: 120px"
               v-model="searchForm.status"
               placeholder="请选择状态"
               clearable
-              style="width: 120px"
             >
               <el-option
                 v-for="item in statusOptions"
@@ -208,370 +215,177 @@ const handleAdd = () => {
                 searchForm.title = '';
                 searchForm.status = '';
               "
-              >重置</el-button
             >
+              重置
+            </el-button>
           </el-form-item>
         </el-form>
       </div>
     </div>
 
-    <!-- 表格区域 -->
+    <!-- 文章列表 -->
     <div class="article-list">
-      <el-table
-        :data="tableData"
-        style="width: 100%"
-        border
-        :loading="loading"
-        @row-click="handleRowClick"
-      >
-        <el-table-column prop="id" label="ID" width="180"></el-table-column>
-        <el-table-column prop="title" label="标题" width="180">
-          <template #default="{ row }">
-            {{ formatTitle(row.title) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="content" label="内容" width="180">
-          <template #default="{ row }">
-            {{ formatContent(row.content) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="180">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ getStatusText(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-          width="180"
-        ></el-table-column>
-        <el-table-column
-          prop="updateTime"
-          label="更新时间"
-          width="180"
-        ></el-table-column>
-        <el-table-column label="操作">
-          <template #default="scope">
-            <el-button
-              size="small"
-              type="danger"
-              @click.stop="handleDelete(scope.row)"
-              >删除</el-button
-            >
-          </template>
-        </el-table-column>
-      </el-table>
+      <template v-if="tableData.length > 0">
+        <ArticleCard
+          v-for="item in tableData"
+          :key="item.id"
+          :article="item"
+          :showDelete="true"
+          :showCategoryId="false"
+          @click="handleRowClick(item)"
+          @delete="handleDelete(item)"
+        />
+      </template>
+      <el-empty v-else description="暂无文章数据" />
     </div>
   </div>
 </template>
 
 <style scoped>
 .article-container {
+  padding: 12px;
+  max-width: 1400px;
+  margin: 0 auto;
   min-height: 100vh;
-  background-color: #f5f7fa;
-  padding: 16px;
 }
 
+/* 头部样式 */
 .fixed-header {
   position: sticky;
   top: 0;
-  background-color: #f5f7fa;
-  z-index: 10;
-  padding-bottom: 12px;
-  margin-bottom: 16px;
+  background: white;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 12px;
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 8px 0;
 }
 
-.header-section {
-  background: white;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  margin-bottom: 16px;
+.header-content {
   display: flex;
   align-items: center;
-}
-
-.header-left {
-  flex: 0 0 80px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+  min-height: 40px;
 }
 
 .back-button {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.3s ease;
-  padding: 8px 12px;
-  height: 32px;
+  flex-shrink: 0;
 }
 
-.back-button:hover {
-  transform: translateX(-3px);
-}
-
-.header-center {
-  flex: 1;
+.header-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-grow: 1;
   text-align: center;
-  padding: 0 80px;
 }
 
-.header-center h2 {
-  margin: 0 0 4px 0;
-  font-size: 20px;
-  font-weight: 500;
-  color: #303133;
+.add-button {
+  flex-shrink: 0;
 }
 
-.description {
-  color: #909399;
-  font-size: 12px;
-  line-height: 1.4;
+/* 搜索区域 */
+.search-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-top: 12px;
+  cursor: pointer;
+  gap: 8px;
+  border: 1px solid #eee;
+  transition: all 0.3s ease;
 }
 
-.header-right {
-  flex: 0 0 80px;
-  text-align: right;
+.search-toggle:hover {
+  background: #f0f0f0;
 }
 
 .search-section {
-  background: white;
+  background: #f8f9fa;
+  padding: 12px;
   border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  margin-top: 12px;
+  border: 1px solid #eee;
+  display: flex;
+  justify-content: center;
+  transition: all 0.3s ease;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.search-section.search-collapsed {
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  opacity: 0;
 }
 
 .search-form {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
-  max-width: 1000px;
-  margin: 0 auto;
+  align-items: center;
 }
 
-:deep(.el-form-item) {
+.search-form .el-form-item {
   margin-bottom: 0;
 }
 
-:deep(.el-form-item__content) {
-  margin-bottom: 0 !important;
-}
-
-:deep(.el-button) {
-  height: 32px;
-  padding: 0 12px;
-}
-
-:deep(.el-input__wrapper) {
-  height: 32px;
-}
-
-:deep(.el-input__inner) {
-  height: 32px;
-  line-height: 32px;
-}
-
+/* 文章列表 */
 .article-list {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  margin-top: 24px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch; /* 添加iOS滑动优化 */
-}
-
-/* 确保表格容器在移动端正确处理 */
-:deep(.el-table) {
-  width: 100% !important;
-  min-width: 800px; /* 设置最小宽度确保内容完整显示 */
-}
-
-/* 优化移动端滑动体验 */
-@media screen and (max-width: 768px) {
-  .article-list {
-    padding: 12px;
-    margin: 0;
-    border-radius: 0;
-    max-width: 100vw;
-    overflow-x: auto;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
-
-  .article-list::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
-  }
-
-  :deep(.el-table::before) {
-    display: none;
-  }
-}
-
-.article-list-container {
-  padding: 20px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 20px;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-}
-
-.title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin: 0;
-  position: relative;
-}
-
-.title::after {
-  content: "";
-  position: absolute;
-  bottom: -8px;
-  left: 0;
-  width: 50px;
-  height: 4px;
-  background: linear-gradient(135deg, #3a8ee6 0%, #0056b3 100%);
-  border-radius: 4px;
-}
-
-.article-card {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 20px;
-  transition: all 0.3s ease;
-  border: 1px solid #ebeef5;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-}
-
-.article-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  border-color: #e0e3e9;
-}
-
-.article-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 12px 0;
-}
-
-.article-info {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
-  margin-bottom: 12px;
-  color: #606266;
-  font-size: 14px;
+  padding-top: 12px;
 }
 
-.article-category {
-  padding: 4px 12px;
-  background: #ecf5ff;
-  color: #409eff;
-  border-radius: 4px;
-  font-weight: 500;
+/* 响应式调整 */
+@media (max-width: 992px) {
+  .article-list {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
 }
 
-.article-date {
-  color: #666;
-  font-weight: 500;
-}
+@media (max-width: 768px) {
+  .article-container {
+    padding: 8px;
+  }
 
-.article-content {
-  color: #333333;
-  line-height: 1.6;
-  margin: 16px 0;
-  font-size: 15px;
-}
-
-.article-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-:deep(.el-button) {
-  transition: all 0.3s ease;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-weight: 500;
-}
-
-:deep(.el-button:hover) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-:deep(.el-button--primary) {
-  background: linear-gradient(135deg, #3a8ee6 0%, #0056b3 100%);
-}
-
-:deep(.el-button--danger) {
-  background: linear-gradient(135deg, #f56c6c 0%, #d63031 100%);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-}
-
-.empty-state-text {
-  font-size: 16px;
-  color: #909399;
-  margin-top: 16px;
-}
-
-@media screen and (max-width: 768px) {
   .fixed-header {
-    position: relative;
-    padding-bottom: 8px;
-    margin-bottom: 8px;
+    padding: 6px 0;
   }
 
-  .header-section {
-    padding: 8px 12px;
-    margin-bottom: 8px;
+  .header-content {
+    padding: 0 8px;
+    min-height: 36px;
   }
 
-  .header-left {
-    flex-direction: row;
+  .header-title {
+    font-size: 15px;
   }
 
-  .back-button {
-    padding: 6px 10px;
-    height: 28px;
-  }
-
-  .header-center {
-    padding: 0;
-  }
-
-  .header-center h2 {
-    font-size: 16px;
-    margin-bottom: 2px;
-  }
-
-  .description {
-    display: none; /* 在移动端隐藏描述文字 */
+  .search-toggle {
+    display: flex;
   }
 
   .search-section {
     padding: 8px;
+    margin-top: 8px;
+  }
+
+  .search-section.search-collapsed {
+    margin-top: 0;
   }
 
   .search-form {
@@ -580,85 +394,38 @@ const handleAdd = () => {
     gap: 8px;
   }
 
-  :deep(.el-form--inline) {
-    display: flex;
-    flex-direction: column;
-  }
-
-  :deep(.el-form--inline .el-form-item) {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
+  .search-form .el-form-item {
+    width: 100%;
     margin-right: 0;
   }
 
-  :deep(.el-form-item__label) {
-    text-align: left;
-    padding-bottom: 4px;
-  }
-
-  :deep(.el-input),
-  :deep(.el-select) {
+  .search-form .el-input,
+  .search-form .el-select {
     width: 100% !important;
   }
 
-  :deep(.el-form-item__content) {
-    margin-left: 0 !important;
+  .article-list {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
+}
 
-  /* 调整按钮组的布局 */
-  :deep(.el-form-item:last-child) {
-    flex-direction: row;
-    justify-content: flex-end;
-    margin-top: 8px;
-  }
-
-  :deep(.el-form-item:last-child .el-form-item__content) {
-    flex-direction: row;
-    gap: 8px;
+@media (max-width: 480px) {
+  .header-title {
+    font-size: 14px;
   }
 
   .search-section {
-    padding: 8px;
+    padding: 6px;
   }
 
-  .article-list-container {
-    padding: 12px;
+  .search-form .el-button {
+    width: 100%;
+    margin: 2px 0 !important;
   }
 
-  .header {
-    flex-direction: column;
-    gap: 16px;
-    align-items: flex-start;
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-
-  .title {
-    font-size: 20px;
-  }
-
-  .article-card {
-    padding: 16px;
-  }
-
-  .article-title {
-    font-size: 18px;
-  }
-
-  .article-info {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .article-actions {
-    flex-direction: row;
-    justify-content: flex-end;
-  }
-
-  :deep(.el-button--small) {
-    min-width: 70px;
-    padding: 6px 12px;
+  .article-list {
+    gap: 10px;
   }
 }
 </style>
