@@ -4,19 +4,14 @@ import {
   deleteArticleService,
   getArticleListService,
   getSelectedArticleListService,
-  updateCoverImageService //传入参数articleId, categoryId,coverImageUrl
+  updateCoverImageService
 } from "../../api/article.js";
 import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import {
-  Plus,
-  ArrowLeft,
-  ArrowDown,
-  ArrowUp,
-  Upload
-} from "@element-plus/icons-vue";
+import { Plus, ArrowLeft, ArrowDown, ArrowUp } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
 import ArticleCard from "../../components/ArticleCard.vue";
+import UploadImageDialog from "../../components/UploadImageDialog.vue";
 import { ossClient } from "../../utils/oss/index.js";
 
 const router = useRouter();
@@ -25,11 +20,10 @@ const categoryId = route.query.categoryId;
 const tableData = ref([]);
 const loading = ref(false);
 const isSearchExpanded = ref(window.innerWidth > 768);
+
 // 上传封面图片相关
 const uploadDialogVisible = ref(false);
 const currentUploadArticle = ref(null);
-const imageUrl = ref("");
-const selectedFile = ref(null);
 const uploadLoading = ref(false);
 
 // 监听窗口大小变化
@@ -168,40 +162,15 @@ const handleAdd = () => {
   });
 };
 
-// 处理文件上传前的验证
-const beforeUpload = (file) => {
-  const isImage = file.type.startsWith("image/");
-  const isLt5M = file.size / 1024 / 1024 < 5;
-
-  if (!isImage) {
-    ElMessage.error("只能上传图片文件!");
-    return false;
-  }
-  if (!isLt5M) {
-    ElMessage.error("图片大小不能超过 5MB!");
-    return false;
-  }
-  return true;
-};
-
-// 处理文件变更
-const handleFileChange = (file) => {
-  if (file && beforeUpload(file)) {
-    selectedFile.value = file;
-    imageUrl.value = URL.createObjectURL(file);
-  }
-};
-
-// 处理拖拽文件
-const handleDrop = (e) => {
-  e.preventDefault();
-  const file = e.dataTransfer.files[0];
-  handleFileChange(file);
+// 处理上传对话框
+const handleChangeCoverImage = (row) => {
+  currentUploadArticle.value = row;
+  uploadDialogVisible.value = true;
 };
 
 // 处理文件上传
-const handleUpload = async () => {
-  if (!selectedFile.value) {
+const handleUpload = async (file) => {
+  if (!file) {
     ElMessage.warning("请先选择图片");
     return;
   }
@@ -209,14 +178,14 @@ const handleUpload = async () => {
   uploadLoading.value = true;
   try {
     await ossClient.init();
-    const extension = selectedFile.value.name.split(".").pop();
+    const extension = file.name.split(".").pop();
     const fileName = ossClient.generateFileName(
       currentUploadArticle.value.articleId,
       ossClient.constructor.IMAGE_TYPE.ARTICLE_BACKGROUND,
       extension
     );
     const fileUrl = ossClient.generateFileUrl(fileName);
-    await ossClient.uploadFile(fileName, selectedFile.value);
+    await ossClient.uploadFile(fileName, file);
     await updateCoverImageService({
       articleId: currentUploadArticle.value.articleId,
       categoryId: categoryId,
@@ -230,27 +199,13 @@ const handleUpload = async () => {
     if (index > -1) {
       tableData.value[index].coverImage = fileUrl; // 更新封面图片
     }
-    handleCloseUpload();
+    uploadDialogVisible.value = false;
   } catch (error) {
     console.error("上传失败:", error);
     ElMessage.error("上传失败，请重试");
   } finally {
     uploadLoading.value = false;
   }
-};
-
-// 关闭上传对话框
-const handleCloseUpload = () => {
-  uploadDialogVisible.value = false;
-  currentUploadArticle.value = null;
-  imageUrl.value = "";
-  selectedFile.value = null;
-};
-
-// 打开上传对话框
-const handleChangeCoverImage = (row) => {
-  currentUploadArticle.value = row;
-  uploadDialogVisible.value = true;
 };
 </script>
 
@@ -345,54 +300,12 @@ const handleChangeCoverImage = (row) => {
     </div>
 
     <!-- 上传封面图片对话框 -->
-    <el-dialog
-      v-model="uploadDialogVisible"
+    <UploadImageDialog
+      v-model:visible="uploadDialogVisible"
       title="更改文章封面"
-      width="400px"
-      :close-on-click-modal="false"
-      @close="handleCloseUpload"
-    >
-      <div
-        class="upload-container"
-        @drop.prevent="handleDrop"
-        @dragover.prevent
-      >
-        <div class="upload-area" :class="{ 'has-image': imageUrl }">
-          <template v-if="imageUrl">
-            <img :src="imageUrl" class="preview-image" />
-            <div class="image-overlay">
-              <el-icon><Upload /></el-icon>
-              <span>点击或拖拽更换图片</span>
-            </div>
-          </template>
-          <template v-else>
-            <el-icon><Upload /></el-icon>
-            <div class="upload-text">
-              <span>点击或拖拽上传图片</span>
-              <p class="upload-hint">支持 jpg、png 格式，大小不超过 2MB</p>
-            </div>
-          </template>
-          <input
-            type="file"
-            class="file-input"
-            accept="image/*"
-            @change="(e) => handleFileChange(e.target.files[0])"
-          />
-        </div>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="handleCloseUpload">取消</el-button>
-          <el-button
-            type="primary"
-            :loading="uploadLoading"
-            @click="handleUpload"
-          >
-            确认上传
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
+      :loading="uploadLoading"
+      @confirm="handleUpload"
+    />
   </div>
 </template>
 
@@ -582,168 +495,5 @@ const handleChangeCoverImage = (row) => {
   .article-list {
     gap: 10px;
   }
-}
-
-/* 上传图片模态框样式 */
-.upload-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.upload-demo {
-  width: 100%;
-  text-align: center;
-  padding: 20px 0;
-  border: 1px dashed #d3d3d3;
-  border-radius: 8px;
-  background-color: #fafafa;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.upload-demo:hover {
-  background-color: #f5f5f5;
-}
-
-.image-preview {
-  margin-top: 12px;
-  width: 100%;
-  text-align: center;
-}
-
-.image-preview img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-}
-
-:deep(.el-upload-dragger) {
-  width: 100%;
-  height: 200px;
-}
-
-:deep(.el-upload__tip) {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 8px;
-  text-align: center;
-}
-
-:deep(.el-icon--upload) {
-  font-size: 48px;
-  color: #909399;
-  margin-bottom: 12px;
-}
-
-:deep(.el-upload__text) {
-  color: #606266;
-  font-size: 14px;
-  text-align: center;
-}
-
-:deep(.el-upload__text em) {
-  color: #409eff;
-  font-style: normal;
-}
-
-.dialog-footer {
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.upload-area {
-  width: 100%;
-}
-
-.preview-image {
-  width: 100%;
-  max-height: 300px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-/* 新增上传对话框样式 */
-.upload-container {
-  padding: 20px;
-}
-
-.upload-area {
-  position: relative;
-  width: 100%;
-  height: 200px;
-  border: 2px dashed #dcdfe6;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  overflow: hidden;
-}
-
-.upload-area:hover {
-  border-color: var(--el-color-primary);
-}
-
-.upload-area.has-image {
-  border-style: solid;
-}
-
-.preview-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  transition: opacity 0.3s;
-  color: white;
-}
-
-.upload-area.has-image:hover .image-overlay {
-  opacity: 1;
-}
-
-.upload-text {
-  text-align: center;
-  color: #606266;
-}
-
-.upload-hint {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #909399;
-}
-
-.file-input {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
 }
 </style>

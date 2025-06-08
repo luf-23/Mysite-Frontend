@@ -10,6 +10,7 @@ import {
   updateUserInfoService
 } from "../api/user.js";
 import { ossClient } from "../utils/oss";
+import UploadImageDialog from "../components/UploadImageDialog.vue";
 
 const route = useRoute();
 const author = route.query.author ? route.query.author : null;
@@ -43,56 +44,56 @@ if (author && author !== userInfo.value.username) {
   getUserInfoData();
 }
 
-const selectImageDialogVisible = ref(false);
-const imageUrl = ref(null); //只做临时展示预览
-const selectedFile = ref(null);
-let fileName = ""; // 用于存储生成的文件名
+// 图片上传相关
+const uploadDialogVisible = ref(false);
 const isAvatar = ref(false);
+const uploadLoading = ref(false);
 
-const openAvatarDialog = async () => {
-  await ossClient.init();
+const openAvatarDialog = () => {
   isAvatar.value = true;
-  imageUrl.value = userInfo.value.avatarImage;
-  selectImageDialogVisible.value = true;
+  uploadDialogVisible.value = true;
 };
-const openBackgroundDialog = async () => {
-  await ossClient.init();
+
+const openBackgroundDialog = () => {
   isAvatar.value = false;
-  imageUrl.value = userInfo.value.backgroundImage;
-  selectImageDialogVisible.value = true;
+  uploadDialogVisible.value = true;
 };
-const generateFileName = () => {
-  const extension = selectedFile.value.name.split(".").pop();
-  const type = isAvatar.value
-    ? ossClient.constructor.IMAGE_TYPE.AVATAR
-    : ossClient.constructor.IMAGE_TYPE.BACKGROUND;
-  return ossClient.generateFileName(userInfo.value.userId, type, extension);
-};
-const generateFileUrl = () => {
-  return ossClient.generateFileUrl(fileName);
-};
-const handleFileChange = (event) => {
-  if (event.target && event.target.files) {
-    const file = event.target.files[0];
-    imageUrl.value = URL.createObjectURL(file);
-    selectedFile.value = file;
-  } else {
-    console.error("文件输入元素未找到或未正确绑定事件");
+
+const handleUpload = async (file) => {
+  if (!file) {
+    ElMessage.warning("请先选择图片");
+    return;
   }
-};
-const closeImageDialog = () => {
-  imageUrl.value = null;
-  selectImageDialogVisible.value = false;
-};
-const uploadImage = async () => {
-  await ossClient.uploadFile(fileName, selectedFile.value);
-};
-const submitImage = async () => {
-  fileName = generateFileName();
-  console.log("生成的文件名:", fileName);
-  if (isAvatar.value) formData.avatarImage = generateFileUrl();
-  else formData.backgroundImage = generateFileUrl();
-  closeImageDialog();
+
+  uploadLoading.value = true;
+  try {
+    await ossClient.init();
+    const extension = file.name.split(".").pop();
+    const type = isAvatar.value
+      ? ossClient.constructor.IMAGE_TYPE.AVATAR
+      : ossClient.constructor.IMAGE_TYPE.BACKGROUND;
+    const fileName = ossClient.generateFileName(
+      userInfo.value.userId,
+      type,
+      extension
+    );
+    const fileUrl = ossClient.generateFileUrl(fileName);
+    await ossClient.uploadFile(fileName, file);
+
+    if (isAvatar.value) {
+      formData.avatarImage = fileUrl;
+    } else {
+      formData.backgroundImage = fileUrl;
+    }
+
+    uploadDialogVisible.value = false;
+    ElMessage.success("上传成功");
+  } catch (error) {
+    console.error("上传失败:", error);
+    ElMessage.error("上传失败，请重试");
+  } finally {
+    uploadLoading.value = false;
+  }
 };
 
 const dialogVisible = ref(false);
@@ -102,6 +103,7 @@ const formData = reactive({
   avatarImage: "",
   backgroundImage: ""
 });
+
 const openDialog = function () {
   dialogVisible.value = true;
   formData.nickname = userInfo.value.nickname;
@@ -109,16 +111,15 @@ const openDialog = function () {
   formData.avatarImage = userInfo.value.avatarImage;
   formData.backgroundImage = userInfo.value.backgroundImage;
 };
+
 const closeDialog = function () {
   dialogVisible.value = false;
 };
+
 const formRef = ref(null);
 
 const rules = {
-  nickname: [
-    { required: true, message: "昵称不能为空", trigger: "blur" }
-    //{ min: 2, max: 20, message: '昵称长度应在 2 到 20 个字符之间', trigger: 'blur' }
-  ]
+  nickname: [{ required: true, message: "昵称不能为空", trigger: "blur" }]
 };
 
 const submitForm = async () => {
@@ -126,9 +127,6 @@ const submitForm = async () => {
   try {
     await formRef.value.validate();
     await updateUserInfo(formData);
-    if (selectedFile.value) {
-      await uploadImage();
-    }
     ElMessage.success("更新成功");
     closeDialog();
   } catch (error) {
@@ -136,8 +134,8 @@ const submitForm = async () => {
     ElMessage.error("请检查表单输入是否正确");
   }
 };
+
 const updateUserInfo = async (data) => {
-  //userInfo.value.username = data.username;
   userInfo.value.nickname = data.nickname;
   userInfo.value.signature = data.signature;
   userInfo.value.avatarImage = data.avatarImage;
@@ -261,13 +259,13 @@ const handleAvatarClick = () => {
             :rows="3"
           ></el-input>
         </el-form-item>
-        <el-form-item label="头像" class="avatar-form-item">
+        <el-form-item label="头像">
           <div class="avatar-input-group">
             <el-input v-model="formData.avatarImage"></el-input>
             <el-button @click="openAvatarDialog">选择头像</el-button>
           </div>
         </el-form-item>
-        <el-form-item label="背景图片" class="background-form-item">
+        <el-form-item label="背景图片">
           <div class="background-input-group">
             <el-input v-model="formData.backgroundImage"></el-input>
             <el-button @click="openBackgroundDialog">选择背景</el-button>
@@ -282,35 +280,13 @@ const handleAvatarClick = () => {
       </template>
     </el-dialog>
 
-    <!--图片选择对话框-->
-    <el-dialog
-      v-model="selectImageDialogVisible"
-      title="请选择图片"
-      :width="windowWidth <= 768 ? '90%' : '30%'"
-      :modal="true"
-      :close-on-click-modal="false"
-      :model="imageUrl"
-    >
-      <input type="file" @change="handleFileChange" accept="image/*" />
-      <div v-if="imageUrl">
-        <img
-          :src="imageUrl"
-          alt="Selected Image"
-          style="max-width: 100%; height: auto"
-        />
-      </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="closeImageDialog">取消</el-button>
-          <el-button
-            type="primary"
-            @click="submitImage"
-            :disabled="!selectedFile"
-            >提交</el-button
-          >
-        </div>
-      </template>
-    </el-dialog>
+    <!-- 图片上传对话框 -->
+    <UploadImageDialog
+      v-model:visible="uploadDialogVisible"
+      :title="isAvatar ? '选择头像' : '选择背景图片'"
+      :loading="uploadLoading"
+      @confirm="handleUpload"
+    />
   </LeftMenu>
 </template>
 
@@ -425,30 +401,6 @@ const handleAvatarClick = () => {
   line-height: 1.6;
 }
 
-.avatar-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.avatar-item {
-  width: 80px;
-  height: 80px;
-  cursor: pointer;
-}
-
-.background-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.background-item {
-  width: 120px;
-  height: 80px;
-  cursor: pointer;
-}
-
 .edit-profile-dialog {
   padding: 20px;
 }
@@ -457,12 +409,8 @@ const handleAvatarClick = () => {
   margin-top: 10px;
 }
 
-.avatar-form-item .avatar-input-group {
-  display: flex;
-  gap: 10px;
-}
-
-.background-form-item .background-input-group {
+.avatar-input-group,
+.background-input-group {
   display: flex;
   gap: 10px;
 }
@@ -471,14 +419,6 @@ const handleAvatarClick = () => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-}
-
-.avatar-dialog {
-  padding: 20px;
-}
-
-.background-dialog {
-  padding: 20px;
 }
 
 /* 移动端适配样式 */
@@ -524,33 +464,6 @@ const handleAvatarClick = () => {
   .background-input-group .el-button {
     margin-top: 8px;
     width: 100%;
-  }
-
-  .avatar-list,
-  .background-list {
-    justify-content: center;
-  }
-
-  .avatar-item {
-    width: 60px;
-    height: 60px;
-  }
-
-  .background-item {
-    width: 100px;
-    height: 70px;
-  }
-
-  .dialog-footer {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    gap: 12px;
-  }
-
-  .dialog-footer .el-button {
-    flex: 0 0 auto;
-    min-width: 80px;
   }
 
   :deep(.el-dialog__body) {
