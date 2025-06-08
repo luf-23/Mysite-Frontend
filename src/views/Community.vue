@@ -8,10 +8,25 @@ import {
 } from "../api/community";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
+import { ArrowLeft, ArrowDown, Search } from "@element-plus/icons-vue";
 const router = useRouter();
 const communityList = ref([]);
 
 const loading = ref(false);
+const isSearchVisible = ref(false);
+
+// 根据屏幕宽度设置搜索框的初始显示状态
+const setInitialSearchVisibility = () => {
+  isSearchVisible.value = window.innerWidth > 768;
+};
+
+// 在组件挂载时设置初始状态
+setInitialSearchVisibility();
+
+const toggleSearch = () => {
+  isSearchVisible.value = !isSearchVisible.value;
+};
+
 const getAuthorName = async (categoryId) => {
   try {
     const result = await getAuthorNameService(categoryId);
@@ -109,38 +124,65 @@ const handleSearch = async function () {
 </script>
 
 <template>
-  <div class="community-container">
+  <div
+    class="community-container"
+    :class="{ 'search-visible': isSearchVisible }"
+  >
     <div class="fixed-header">
-      <div class="search-section">
-        <el-form :inline="true" :model="searchForm" class="search-form">
-          <el-form-item label="标题关键字">
-            <el-input
-              v-model="searchForm.title"
-              placeholder="请输入文章标题关键字"
-              clearable
-              style="width: 300px"
-            />
-          </el-form-item>
-          <el-form-item label="内容关键字">
-            <el-input
-              v-model="searchForm.content"
-              placeholder="请输入文章内容关键字"
-              clearable
-              style="width: 300px"
-            />
-          </el-form-item>
-          <div class="button-group">
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button
-              @click="
-                searchForm.title = '';
-                searchForm.content = '';
-              "
-              >重置</el-button
-            >
-          </div>
-        </el-form>
+      <div class="page-header">
+        <div class="header-left">
+          <el-button @click="router.back()" link>
+            <el-icon><ArrowLeft /></el-icon>
+            返回
+          </el-button>
+        </div>
+        <h2 class="page-title">社区文章</h2>
+        <div class="search-toggle">
+          <el-button @click="toggleSearch" text class="toggle-button">
+            <el-icon>
+              <template v-if="isSearchVisible">
+                <ArrowDown :class="{ 'rotate-180': !isSearchVisible }" />
+              </template>
+              <template v-else>
+                <Search />
+              </template>
+            </el-icon>
+            {{ isSearchVisible ? "收起搜索" : "展开搜索" }}
+          </el-button>
+        </div>
       </div>
+      <transition name="slide-fade">
+        <div v-show="isSearchVisible" class="search-section">
+          <el-form :inline="true" :model="searchForm" class="search-form">
+            <el-form-item label="标题关键字">
+              <el-input
+                v-model="searchForm.title"
+                placeholder="请输入文章标题关键字"
+                clearable
+                style="width: 300px"
+              />
+            </el-form-item>
+            <el-form-item label="内容关键字">
+              <el-input
+                v-model="searchForm.content"
+                placeholder="请输入文章内容关键字"
+                clearable
+                style="width: 300px"
+              />
+            </el-form-item>
+            <div class="button-group">
+              <el-button type="primary" @click="handleSearch">搜索</el-button>
+              <el-button
+                @click="
+                  searchForm.title = '';
+                  searchForm.content = '';
+                "
+                >重置</el-button
+              >
+            </div>
+          </el-form>
+        </div>
+      </transition>
     </div>
 
     <div v-if="loading" class="loading">加载中...</div>
@@ -162,6 +204,69 @@ const handleSearch = async function () {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  padding-top: 100px; /* 为固定头部留出空间 */
+}
+
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #f5f7fa;
+  z-index: 100;
+  padding: 8px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid #ebeef5;
+  background-color: white;
+  position: relative;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.page-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 18px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.search-toggle {
+  margin-left: auto;
+}
+
+.toggle-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+  transition: transform 0.3s;
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-20px);
+  opacity: 0;
 }
 
 .loading {
@@ -175,15 +280,6 @@ const handleSearch = async function () {
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
   padding: 10px;
-}
-
-.fixed-header {
-  position: sticky;
-  top: 0;
-  background-color: #f5f7fa;
-  z-index: 10;
-  padding-bottom: 12px;
-  margin-bottom: 16px;
 }
 
 .search-section {
@@ -203,18 +299,48 @@ const handleSearch = async function () {
 }
 
 @media screen and (max-width: 768px) {
-  .article-list {
-    grid-template-columns: 1fr;
+  .community-container {
+    padding: 70px 8px 20px 8px; /* 减小左右边距，保持上边距 */
+    transition: padding-top 0.3s ease;
+  }
+
+  .page-title {
+    left: 45%; /* 在移动端将标题稍微左移 */
+  }
+
+  .community-container.search-visible {
+    padding-top: 220px; /* 增加上边距防止遮挡 */
   }
 
   .fixed-header {
-    position: relative;
-    padding-bottom: 8px;
-    margin-bottom: 8px;
+    position: fixed;
+    width: 100%;
+  }
+
+  .article-list {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0; /* 移除文章列表的内边距 */
+  }
+
+  .article-list :deep(.article-card) {
+    border: 5px solid #e1e4ec;
+    border-bottom: 2px solid #e6e6e6;
+    padding: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    background-color: #ffffff;
+  }
+
+  .article-list :deep(.article-card:last-child) {
+    border-bottom: none;
+    margin-bottom: 0;
   }
 
   .search-section {
     padding: 8px;
+    background: white;
   }
 
   .search-form {
@@ -238,6 +364,33 @@ const handleSearch = async function () {
     margin-bottom: 8px;
     margin-right: 0;
     width: 100%;
+  }
+
+  .toggle-button {
+    font-size: 14px;
+    padding: 6px 12px;
+    transition: all 0.3s ease;
+    border-radius: 20px;
+  }
+
+  .toggle-button:hover {
+    background-color: #f2f6fc;
+  }
+
+  .toggle-button .el-icon {
+    font-size: 18px;
+    margin-right: 2px;
+  }
+
+  /* 调整输入框在移动端的宽度 */
+  .search-form :deep(.el-input) {
+    width: 100% !important;
+  }
+
+  /* 优化移动端搜索框过渡动画 */
+  .slide-fade-enter-active,
+  .slide-fade-leave-active {
+    transition: all 0.2s ease;
   }
 }
 

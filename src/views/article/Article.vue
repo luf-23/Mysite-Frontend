@@ -227,25 +227,36 @@ const handleAuthorClick = (authorName) => {
   display: flex;
   align-items: center;
   margin-bottom: 20px;
-  gap: 20px;
+  gap: 16px;
   background: white;
-  padding: 16px 24px;
+  padding: 12px 16px;
   border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  width: calc(100% - 32px);
 }
 
 .article-header h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
   color: #303133;
   font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
 }
 
 .back-button {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   transition: all 0.3s ease;
+  flex-shrink: 0;
+  padding: 8px 12px;
 }
 
 .back-button:hover {
@@ -384,26 +395,32 @@ const handleAuthorClick = (authorName) => {
   padding: 6px 12px;
   border-radius: 4px;
 }
-
 @media (max-width: 768px) {
   .article-container {
-    padding: 10px;
+    padding: 5px;
+    max-width: 100%;
   }
 
   .article-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px;
+    padding: 8px 12px;
+    gap: 12px;
+    margin-bottom: 8px;
+    width: calc(100% - 24px);
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
   }
 
   .article-header h1 {
-    font-size: 20px;
+    font-size: 16px;
+    margin: 0;
+    flex: 1;
+    text-align: center;
   }
 
   .article-meta {
     flex-direction: column;
-    padding: 15px;
+    padding: 10px;
   }
 
   .left-meta,
@@ -413,40 +430,73 @@ const handleAuthorClick = (authorName) => {
 
   .left-meta {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
   .right-meta {
-    margin-top: 15px;
+    margin-top: 12px;
     justify-content: flex-start;
     gap: 8px;
   }
 
   .article-title {
-    font-size: 22px;
-    margin-bottom: 16px;
+    font-size: 20px;
+    margin-bottom: 12px;
+    line-height: 1.3;
   }
 
   .time-info {
     flex-direction: column;
-    gap: 8px;
-    padding: 12px;
+    gap: 6px;
+    padding: 8px;
     font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  .article-content {
+    padding: 12px;
   }
 
   :deep(.md-preview-wrapper) {
-    font-size: 14px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  :deep(.md-preview-wrapper h1) {
+    font-size: 20px;
+  }
+
+  :deep(.md-preview-wrapper h2) {
+    font-size: 18px;
+  }
+
+  :deep(.md-preview-wrapper h3) {
+    font-size: 16px;
+  }
+
+  :deep(.md-preview-wrapper p) {
+    font-size: 15px;
+    margin: 8px 0;
   }
 
   :deep(.md-preview-wrapper pre) {
-    margin: 12px 0;
+    margin: 10px -12px;
     padding: 8px;
-    font-size: 12px;
+    font-size: 13px;
     overflow-x: auto;
+    border-radius: 0;
+  }
+
+  :deep(.md-preview-wrapper code) {
+    font-size: 13px;
+  }
+
+  :deep(.el-card__body) {
+    padding: 5px !important;
   }
 
   :deep(.el-button) {
-    padding: 8px 12px;
+    padding: 6px 10px;
     font-size: 14px;
   }
 }

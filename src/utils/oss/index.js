@@ -41,7 +41,7 @@ export class OSSClient {
   }
 
   generateFileUrl(fileName) {
-    return `http://${this.STS.bucket}.${this.STS.endPoint}/${fileName}`;
+    return `https://${this.STS.bucket}.${this.STS.endPoint}/${fileName}`;
   }
 
   generateFileName(id, type, fileExtension) {
