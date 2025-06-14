@@ -70,3 +70,31 @@ export function getUsersService() {
     method: "get"
   });
 }
+
+export function getAnnouncementListService() {
+  return request({
+    url: "/admin/announcement",
+    method: "get"
+  });
+}
+
+export function deleteAnnouncementService(params) {
+  return request({
+    url: "/admin/deleteAnnouncement",
+    method: "post",
+    params,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    }
+  });
+}
+export function addAnnouncementService(data) {
+  return request({
+    url: "/admin/addAnnouncement",
+    method: "post",
+    data,
+    headers: {
+      ContentType: "application/json"
+    }
+  });
+}

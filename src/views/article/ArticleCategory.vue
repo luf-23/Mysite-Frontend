@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from "vue";
+import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import LeftMenu from "../../components/LeftMenu.vue";
 import CategoryCard from "../../components/CategoryCard.vue";
@@ -12,6 +12,25 @@ import {
 import { ElMessage, ElMessageBox } from "element-plus";
 const router = useRouter();
 const tableData = reactive([]);
+
+// 添加窗口宽度响应式变量
+const dialogWidth = ref(window.innerWidth > 768 ? "40%" : "90%");
+
+// 添加窗口大小变化监听函数
+const updateDialogWidth = () => {
+  dialogWidth.value = window.innerWidth > 768 ? "40%" : "90%";
+};
+
+// 在组件挂载时添加监听器
+onMounted(() => {
+  window.addEventListener("resize", updateDialogWidth);
+});
+
+// 在组件卸载时移除监听器
+onUnmounted(() => {
+  window.removeEventListener("resize", updateDialogWidth);
+});
+
 const getArticleCategoryList = async () => {
   const result = await getCategoryListService();
   Object.assign(
@@ -196,28 +215,35 @@ const handleRowClick = (rowData) => {
       <el-button type="primary" @click="handleAdd">添加分类</el-button>
     </div>
 
-    <div class="category-grid">
-      <CategoryCard
-        v-for="item in tableData"
-        :key="item.id"
-        :category="{
-          name: item.name,
-          description: item.description,
-          createTime: item.createTime,
-          updateTime: item.updateTime
-        }"
-        @click="handleRowClick(item)"
-        @edit="handleEdit(item)"
-        @delete="handleDelete(item)"
-      />
-    </div>
+    <template v-if="tableData.length !== 0">
+      <div class="category-grid">
+        <CategoryCard
+          v-for="item in tableData"
+          :key="item.id"
+          :category="{
+            name: item.name,
+            description: item.description,
+            createTime: item.createTime,
+            updateTime: item.updateTime
+          }"
+          @click="handleRowClick(item)"
+          @edit="handleEdit(item)"
+          @delete="handleDelete(item)"
+        />
+      </div>
+    </template>
+    <el-empty
+      v-else
+      description="暂无文章分类,点击右上角创建"
+      :image-size="200"
+    />
   </LeftMenu>
 
   <!-- 添加分类对话框 -->
   <el-dialog
     v-model="dialogForAdd"
     title="添加文章分类"
-    width="40%"
+    :width="dialogWidth"
     :modal="true"
     :close-on-click-modal="false"
   >
@@ -248,7 +274,7 @@ const handleRowClick = (rowData) => {
   <el-dialog
     v-model="dialogForEdit"
     title="编辑"
-    width="40%"
+    :width="dialogWidth"
     :modal="true"
     :close-on-click-modal="false"
   >

@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#忽略Microsoft\Windows\PowerShell\PSReadLine文件夹
+Microsoft/Windows/PowerShell/PSReadLine/*

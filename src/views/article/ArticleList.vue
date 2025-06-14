@@ -282,8 +282,8 @@ const handleUpload = async (file) => {
     </div>
 
     <!-- 文章列表 -->
-    <div class="article-list">
-      <template v-if="tableData.length > 0">
+    <template v-if="!loading && tableData.length > 0">
+      <div class="article-list">
         <ArticleCard
           v-for="item in tableData"
           :key="item.articleId"
@@ -295,9 +295,9 @@ const handleUpload = async (file) => {
           @delete="() => handleDelete(item)"
           @changeCoverImage="() => handleChangeCoverImage(item)"
         />
-      </template>
-      <el-empty v-else description="暂无文章数据" />
-    </div>
+      </div>
+    </template>
+    <el-empty v-else description="暂无文章数据" :image-size="200" />
 
     <!-- 上传封面图片对话框 -->
     <UploadImageDialog
