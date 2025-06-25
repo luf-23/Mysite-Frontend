@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 #忽略Microsoft\Windows\PowerShell\PSReadLine文件夹
-Microsoft/Windows/PowerShell/PSReadLine/*
+Microsoft/*
