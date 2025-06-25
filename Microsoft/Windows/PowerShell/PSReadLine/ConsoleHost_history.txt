@@ -1,6 +1,0 @@
-git add .
-git commit -m "1"
-git config --global user.email 3162794813@qq.com
-git config user.name luf
-git config user.email 3162794813@qq.com
-git add .
