@@ -30,6 +30,8 @@ const getAnnouncementList = async () => {
       date: item.date,
       type: item.type // 'success', 'info', 'warning', 'danger'
     }));
+    // 按日期降序排序
+    announcements.value.sort((a, b) => new Date(b.date) - new Date(a.date));
   } catch (error) {
     console.error("获取公告列表失败:", error);
   }
