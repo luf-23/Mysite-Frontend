@@ -3,7 +3,6 @@ import { ref, onMounted, nextTick } from "vue";
 import { useChatStore } from "../../store/chat";
 import { storeToRefs } from "pinia";
 import { ElMessage, ElSelect, ElOption } from "element-plus";
-import { chatService } from "../../api/ai";
 import { ElMessageBox } from "element-plus";
 import "github-markdown-css";
 import { getBaseURL } from "../../utils/request";
@@ -39,43 +38,6 @@ onMounted(() => {
   }
 });
 
-// 发送消息
-const sendMessage = async () => {
-  if (!inputMessage.value.trim()) {
-    ElMessage.error("消息不能为空");
-    return;
-  }
-
-  // 添加用户消息
-  chatStore.addMessage("user", inputMessage.value);
-
-  // 清空输入框
-  inputMessage.value = "";
-
-  // 等待DOM更新后滚动到底部
-  await nextTick();
-  scrollToBottom();
-
-  try {
-    // TODO: 这里添加调用AI接口的逻辑
-    const history = chatStore.getCurrentChatHistory();
-    const messages = history.map((msg) => ({
-      role: msg.role,
-      content: msg.content
-    }));
-    const response = await chatService({
-      messages: messages,
-      model: selectedModel.value
-    });
-    // 添加AI消息
-    chatStore.addMessage("assistant", response.data);
-    await nextTick();
-    scrollToBottom();
-  } catch (error) {
-    console.error("发送消息失败:", error);
-  }
-};
-
 const isLoading = ref(false);
 const isthinking = ref(true); // 是否在思考中
 const handleStreamChat = async () => {
@@ -109,7 +71,7 @@ const handleStreamChat = async () => {
     const token = useTokenStore().token;
     const response = await fetch(`${baseURL}ai/chat-stream`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `${token}`,
         "Content-Type": "application/json"
       },
       method: "POST",
