@@ -53,3 +53,25 @@ export function getUserInfoByNameService(params) {
     }
   });
 }
+
+export function sendEmailCaptchaService(params){
+  return request({
+    url: "/user/captcha",
+    method: "post",
+    params,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    }
+  });
+}
+
+export function checkEmailCaptchaService(params){
+  return request({
+    url: "/user/verify",
+    method: "post",
+    params,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    }
+  });
+}

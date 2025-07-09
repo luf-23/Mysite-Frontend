@@ -36,7 +36,7 @@
           <el-menu-item index="/article/category">文章管理</el-menu-item>
           <el-menu-item index="/message">我的私信</el-menu-item>
           <el-menu-item index="/security">安全设置</el-menu-item>
-          <el-menu-item index="/Login">退出登录</el-menu-item>
+          <el-menu-item @click="handleLogout">退出登录</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="system">
@@ -66,7 +66,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute,useRouter } from "vue-router";
 import {
   HomeFilled,
   User,
@@ -74,15 +74,24 @@ import {
   InfoFilled,
   ChatDotSquare
 } from "@element-plus/icons-vue";
+import { useTokenStore } from "../store/token";
 
 const route = useRoute();
 const isCollapse = ref(false);
-
+const tokenStore = useTokenStore();
+const router = useRouter();
 // 计算当前激活的菜单
 const activeMenu = computed(() => {
   const { path } = route;
   return path;
 });
+
+const handleLogout = ()=>{
+  tokenStore.removeToken();
+  router.push({
+    path:"/login"
+  })
+}
 
 // 切换折叠状态
 const toggleCollapse = () => {
