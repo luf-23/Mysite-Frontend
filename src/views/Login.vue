@@ -30,13 +30,13 @@ const timer = ref(null);
 const rules = reactive({
   username: [
     { required: true, message: "用户名/邮箱不能为空", trigger: "blur" },
-    { 
+    {
       validator: (rule, value, callback) => {
         // 邮箱格式正则
         const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         // 用户名格式：5-16个字符
         const usernamePattern = /^.{5,16}$/;
-        
+
         if (islogin.value) {
           // 登录时允许使用邮箱或用户名
           if (emailPattern.test(value) || usernamePattern.test(value)) {
@@ -46,7 +46,7 @@ const rules = reactive({
           }
         } else {
           // 注册时用户名不能包含@
-          if (value.includes('@')) {
+          if (value.includes("@")) {
             callback(new Error("用户名不能包含@"));
           } else if (usernamePattern.test(value)) {
             callback();
@@ -60,10 +60,10 @@ const rules = reactive({
   ],
   email: [
     { required: true, message: "邮箱不能为空", trigger: "blur" },
-    { 
-      pattern: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/, 
-      message: "请输入正确的邮箱格式", 
-      trigger: "blur" 
+    {
+      pattern: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
+      message: "请输入正确的邮箱格式",
+      trigger: "blur"
     }
   ],
   password: [
@@ -139,7 +139,7 @@ const submitRegisterForm = async () => {
   const result = await registerService({
     username: formData.username,
     password: formData.password,
-    email: formData.email,
+    email: formData.email
   });
   if (result.code == 0) {
     ElMessage.success("注册成功");
@@ -149,17 +149,25 @@ const submitRegisterForm = async () => {
   }
 };
 const sendCaptcha = async () => {
+  //参数校验
+  try {
+    await formRef.value.validateField("email");
+  } catch (error) {
+    ElMessage.error("邮箱格式不正确，请检查输入");
+    return;
+  }
+
   if (countdown.value > 0) return;
   if (!formData.email) {
-    ElMessage.warning('请先输入邮箱');
+    ElMessage.warning("请先输入邮箱");
     return;
   }
   captchaLoading.value = true;
   try {
     await sendEmailCaptchaService({
-      email:formData.email
+      email: formData.email
     });
-    ElMessage.success('验证码已发送');
+    ElMessage.success("验证码已发送");
     countdown.value = 60;
     timer.value = setInterval(() => {
       countdown.value--;
@@ -168,7 +176,7 @@ const sendCaptcha = async () => {
       }
     }, 1000);
   } catch (error) {
-    ElMessage.error('验证码发送失败');
+    ElMessage.error("验证码发送失败");
   } finally {
     captchaLoading.value = false;
   }
@@ -186,30 +194,46 @@ const sendCaptcha = async () => {
         label-width="120px"
         class="login-form"
       >
-        <el-form-item :label="islogin ? '用户名/邮箱' : '用户名'" prop="username">
-          <el-input v-model="formData.username" :placeholder="islogin ? '请输入用户名或邮箱' : '请输入用户名'" />
+        <el-form-item v-if="islogin" label="用户名/邮箱" prop="username">
+          <el-input v-model="formData.username" placeholder="用户名或邮箱" />
         </el-form-item>
+        <el-form-item v-else label="用户名" prop="username">
+          <el-input v-model="formData.username" placeholder="填写用户名" />
+        </el-form-item>
+
         <el-form-item v-if="!islogin" label="邮箱" prop="email">
-          <el-input v-model="formData.email" type="email" placeholder="请输入邮箱" />
+          <el-input
+            v-model="formData.email"
+            type="email"
+            placeholder="填写绑定邮箱"
+          />
         </el-form-item>
         <el-form-item v-if="!islogin" label="验证码" prop="captcha">
           <div class="captcha-container">
-            <el-input v-model="formData.captcha" placeholder="请输入验证码" />
-            <el-button 
-              type="primary" 
+            <el-input v-model="formData.captcha" placeholder="邮箱验证码" />
+            <el-button
+              type="primary"
               :loading="captchaLoading"
               :disabled="countdown > 0"
               @click="sendCaptcha"
             >
-              {{ countdown > 0 ? `${countdown}s后重试` : '获取验证码' }}
+              {{ countdown > 0 ? `${countdown}s后重试` : "发送" }}
             </el-button>
           </div>
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="formData.password" type="password" />
+          <el-input
+            v-model="formData.password"
+            placeholder="请输入密码"
+            type="password"
+          />
         </el-form-item>
         <el-form-item v-if="!islogin" label="确认密码" prop="confirmPassword">
-          <el-input v-model="formData.confirmPassword" type="password" />
+          <el-input
+            v-model="formData.confirmPassword"
+            placeholder="请确认密码"
+            type="password"
+          />
         </el-form-item>
         <div class="btn-container">
           <el-form-item v-if="islogin">
@@ -286,11 +310,11 @@ const sendCaptcha = async () => {
     border-radius: 8px;
     transition: all 0.3s ease;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-    
+
     &:hover {
       box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
     }
-    
+
     &.is-focus {
       box-shadow: 0 0 0 1px #409eff inset, 0 4px 12px rgba(64, 158, 255, 0.2);
     }
@@ -334,7 +358,7 @@ const sendCaptcha = async () => {
     font-size: 15px;
     color: #409eff;
     transition: all 0.3s ease;
-    
+
     &:hover {
       color: #36cf9f;
       transform: translateY(-1px);
@@ -345,16 +369,20 @@ const sendCaptcha = async () => {
 .captcha-container {
   display: flex;
   gap: 12px;
+  align-items: center;
 
   .el-input {
     flex: 1;
   }
 
   .el-button {
-    width: 130px;
+    width: auto;
+    min-width: 80px;
+    padding: 0 15px;
+    height: 42px;
     border-radius: 8px;
     transition: all 0.3s ease;
-    
+
     &:not(:disabled):hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
@@ -387,14 +415,20 @@ const sendCaptcha = async () => {
     text-align: left;
     padding: 0 0 8px;
     line-height: 20px;
+    width: auto !important;
   }
 
   :deep(.el-form) {
     padding: 0 5px;
   }
 
-  :deep(.el-form-item) {
+  .login-form :deep(.el-form-item) {
     margin-bottom: 20px;
+    display: block;
+  }
+
+  .login-form :deep(.el-form-item__content) {
+    margin-left: 0 !important;
   }
 
   :deep(.el-input__wrapper) {
@@ -408,8 +442,10 @@ const sendCaptcha = async () => {
 
   .captcha-container {
     .el-button {
-      width: 110px;
+      width: auto;
+      min-width: 70px;
       font-size: 13px;
+      padding: 0 12px;
     }
   }
 }
