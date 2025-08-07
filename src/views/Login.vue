@@ -5,7 +5,8 @@ import {
   registerService,
   getUserInfoService,
   sendEmailCaptchaService,
-  checkEmailCaptchaService
+  checkEmailCaptchaService,
+  resetPasswordService // 新增：导入重置密码的API
 } from "../api/user.js";
 import { useTokenStore } from "../store/token.js";
 import { useUserInfoStore } from "../store/userInfo.js";
@@ -19,9 +20,11 @@ const formData = reactive({
   password: "",
   confirmPassword: "",
   email: "",
-  captcha: ""
+  captcha: "",
+  newPassword: "" // 新增：重置密码用
 });
 const islogin = ref(true);
+const isForgotPassword = ref(false); // 新增：忘记密码状态
 const formRef = ref(null);
 const captchaLoading = ref(false);
 const countdown = ref(0);
@@ -83,6 +86,10 @@ const rules = reactive({
       },
       trigger: "blur"
     }
+  ],
+  newPassword: [
+    { required: true, message: "新密码不能为空", trigger: "blur" },
+    { min: 5, max: 16, message: "长度在 5 到 16 个字符", trigger: "blur" }
   ]
 });
 const changeToRegister = () => {
@@ -96,6 +103,24 @@ const changeToLogin = () => {
   formData.username = "";
   formData.password = "";
   formData.confirmPassword = "";
+};
+
+// 新增：切换到忘记密码表单
+const changeToForgotPassword = () => {
+  islogin.value = false;
+  isForgotPassword.value = true;
+  formData.email = "";
+  formData.captcha = "";
+  formData.newPassword = "";
+};
+
+// 新增：返回登录
+const backToLogin = () => {
+  islogin.value = true;
+  isForgotPassword.value = false;
+  formData.email = "";
+  formData.captcha = "";
+  formData.newPassword = "";
 };
 
 const submitLoginForm = async () => {
@@ -181,12 +206,47 @@ const sendCaptcha = async () => {
     captchaLoading.value = false;
   }
 };
+
+// 新增：提交重置密码表单
+const submitResetPasswordForm = async () => {
+  try {
+    await formRef.value.validate();
+  } catch (error) {
+    ElMessage.error("表单验证失败，请检查输入");
+    return;
+  }
+
+  // 验证验证码
+  const isvalid = await checkEmailCaptchaService({
+    email: formData.email,
+    captcha: formData.captcha
+  });
+
+  if (!isvalid.data) {
+    ElMessage.error("验证码错误或已过期，请重新获取");
+    return;
+  }
+
+  try {
+    // 这里需要调用重置密码的API
+    await resetPasswordService({
+      email: formData.email,
+      newPassword: formData.newPassword
+    });
+    ElMessage.success("密码重置成功，请登录");
+    backToLogin();
+  } catch (error) {
+    ElMessage.error("密码重置失败：" + error.message);
+  }
+};
 </script>
 
 <template>
   <div class="login-container">
     <div class="login-box">
-      <h2 class="login-title">{{ islogin ? "欢迎登录" : "用户注册" }}</h2>
+      <h2 class="login-title">
+        {{ islogin ? "欢迎登录" : isForgotPassword ? "重置密码" : "用户注册" }}
+      </h2>
       <el-form
         :model="formData"
         :rules="rules"
@@ -194,77 +254,129 @@ const sendCaptcha = async () => {
         label-width="120px"
         class="login-form"
       >
-        <el-form-item v-if="islogin" label="用户名/邮箱" prop="username">
-          <el-input v-model="formData.username" placeholder="用户名或邮箱" />
-        </el-form-item>
-        <el-form-item v-else label="用户名" prop="username">
-          <el-input v-model="formData.username" placeholder="填写用户名" />
-        </el-form-item>
+        <!-- 原有的登录和注册表单 -->
+        <template v-if="!isForgotPassword">
+          <el-form-item v-if="islogin" label="用户名/邮箱" prop="username">
+            <el-input v-model="formData.username" placeholder="用户名或邮箱" />
+          </el-form-item>
+          <el-form-item v-else label="用户名" prop="username">
+            <el-input v-model="formData.username" placeholder="填写用户名" />
+          </el-form-item>
 
-        <el-form-item v-if="!islogin" label="邮箱" prop="email">
-          <el-input
-            v-model="formData.email"
-            type="email"
-            placeholder="填写绑定邮箱"
-          />
-        </el-form-item>
-        <el-form-item v-if="!islogin" label="验证码" prop="captcha">
-          <div class="captcha-container">
-            <el-input v-model="formData.captcha" placeholder="邮箱验证码" />
-            <el-button
-              type="primary"
-              :loading="captchaLoading"
-              :disabled="countdown > 0"
-              @click="sendCaptcha"
-            >
-              {{ countdown > 0 ? `${countdown}s后重试` : "发送" }}
-            </el-button>
+          <el-form-item v-if="!islogin" label="邮箱" prop="email">
+            <el-input
+              v-model="formData.email"
+              type="email"
+              placeholder="填写绑定邮箱"
+            />
+          </el-form-item>
+          <el-form-item v-if="!islogin" label="验证码" prop="captcha">
+            <div class="captcha-container">
+              <el-input v-model="formData.captcha" placeholder="邮箱验证码" />
+              <el-button
+                type="primary"
+                :loading="captchaLoading"
+                :disabled="countdown > 0"
+                @click="sendCaptcha"
+              >
+                {{ countdown > 0 ? `${countdown}s后重试` : "发送" }}
+              </el-button>
+            </div>
+          </el-form-item>
+          <el-form-item label="密码" prop="password">
+            <el-input
+              v-model="formData.password"
+              placeholder="请输入密码"
+              type="password"
+            />
+          </el-form-item>
+          <el-form-item v-if="!islogin" label="确认密码" prop="confirmPassword">
+            <el-input
+              v-model="formData.confirmPassword"
+              placeholder="请确认密码"
+              type="password"
+            />
+          </el-form-item>
+          <div class="btn-container">
+            <el-form-item v-if="islogin">
+              <el-button
+                type="primary"
+                @click="submitLoginForm"
+                class="submit-btn"
+                >登录</el-button
+              >
+            </el-form-item>
+            <el-form-item v-if="!islogin">
+              <el-button
+                type="primary"
+                @click="submitRegisterForm"
+                class="submit-btn"
+                >注册</el-button
+              >
+            </el-form-item>
           </div>
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input
-            v-model="formData.password"
-            placeholder="请输入密码"
-            type="password"
-          />
-        </el-form-item>
-        <el-form-item v-if="!islogin" label="确认密码" prop="confirmPassword">
-          <el-input
-            v-model="formData.confirmPassword"
-            placeholder="请确认密码"
-            type="password"
-          />
-        </el-form-item>
-        <div class="btn-container">
-          <el-form-item v-if="islogin">
-            <el-button
-              type="primary"
-              @click="submitLoginForm"
-              class="submit-btn"
-              >登录</el-button
-            >
+          <div class="switch-container">
+            <div v-if="islogin" class="switch-buttons">
+              <el-button link type="primary" @click="changeToRegister"
+                >没有账号？立即注册</el-button
+              >
+              <el-button link type="primary" @click="changeToForgotPassword"
+                >忘记密码？</el-button
+              >
+            </div>
+            <div v-if="!islogin">
+              <el-button link type="primary" @click="changeToLogin"
+                >返回登录</el-button
+              >
+            </div>
+          </div>
+        </template>
+
+        <!-- 忘记密码表单 -->
+        <template v-if="isForgotPassword">
+          <el-form-item label="邮箱" prop="email">
+            <el-input
+              v-model="formData.email"
+              type="email"
+              placeholder="请输入注册时的邮箱"
+            />
           </el-form-item>
-          <el-form-item v-if="!islogin">
-            <el-button
-              type="primary"
-              @click="submitRegisterForm"
-              class="submit-btn"
-              >注册</el-button
-            >
+          <el-form-item label="验证码" prop="captcha">
+            <div class="captcha-container">
+              <el-input v-model="formData.captcha" placeholder="邮箱验证码" />
+              <el-button
+                type="primary"
+                :loading="captchaLoading"
+                :disabled="countdown > 0"
+                @click="sendCaptcha"
+              >
+                {{ countdown > 0 ? `${countdown}s后重试` : "发送" }}
+              </el-button>
+            </div>
           </el-form-item>
-        </div>
-        <div class="switch-container">
-          <el-form-item v-if="islogin">
-            <el-button link type="primary" @click="changeToRegister"
-              >没有账号？立即注册</el-button
-            >
+          <el-form-item label="新密码" prop="newPassword">
+            <el-input
+              v-model="formData.newPassword"
+              type="password"
+              placeholder="请输入新密码"
+            />
           </el-form-item>
-          <el-form-item v-if="!islogin">
-            <el-button link type="primary" @click="changeToLogin"
+          <div class="btn-container">
+            <el-form-item>
+              <el-button
+                type="primary"
+                @click="submitResetPasswordForm"
+                class="submit-btn"
+                >重置密码</el-button
+              >
+            </el-form-item>
+          </div>
+          <div class="switch-container">
+            <el-button link type="primary" @click="backToLogin"
               >返回登录</el-button
             >
-          </el-form-item>
-        </div>
+          </div>
+        </template>
       </el-form>
     </div>
   </div>
@@ -338,31 +450,34 @@ const sendCaptcha = async () => {
     background: linear-gradient(45deg, #409eff, #36cf9f);
     border: none;
     transition: all 0.3s ease;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(64, 158, 255, 0.3);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
   }
+}
+
+.btn-container :deep(.el-form-item__content) {
+  margin-left: 120px;
+  width: calc(100% - 120px);
 }
 
 .switch-container {
   margin-top: 20px;
-  text-align: center;
+  width: 100%;
+}
 
-  .el-button {
-    font-size: 15px;
-    color: #409eff;
-    transition: all 0.3s ease;
+.switch-buttons {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 10px;
+}
 
-    &:hover {
-      color: #36cf9f;
-      transform: translateY(-1px);
-    }
+.switch-buttons .el-button {
+  font-size: 14px;
+  color: #409eff;
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: #36cf9f;
+    transform: translateY(-1px);
   }
 }
 

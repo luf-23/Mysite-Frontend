@@ -54,7 +54,7 @@ export function getUserInfoByNameService(params) {
   });
 }
 
-export function sendEmailCaptchaService(params){
+export function sendEmailCaptchaService(params) {
   return request({
     url: "/user/captcha",
     method: "post",
@@ -65,9 +65,21 @@ export function sendEmailCaptchaService(params){
   });
 }
 
-export function checkEmailCaptchaService(params){
+export function checkEmailCaptchaService(params) {
   return request({
     url: "/user/verify",
+    method: "post",
+    params,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    }
+  });
+}
+
+// 重置密码
+export function resetPasswordService(params) {
+  return request({
+    url: "/user/reset-password",
     method: "post",
     params,
     headers: {
