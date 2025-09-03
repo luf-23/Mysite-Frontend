@@ -66,7 +66,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import { useRoute,useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import {
   HomeFilled,
   User,
@@ -86,12 +86,12 @@ const activeMenu = computed(() => {
   return path;
 });
 
-const handleLogout = ()=>{
+const handleLogout = () => {
   tokenStore.removeToken();
   router.push({
-    path:"/login"
-  })
-}
+    path: "/login"
+  });
+};
 
 // 切换折叠状态
 const toggleCollapse = () => {

@@ -1,8 +1,25 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeft, Clock } from "@element-plus/icons-vue";
+import {
+  ArrowLeft,
+  Clock,
+  Delete,
+  Promotion,
+  Collection
+} from "@element-plus/icons-vue";
 import { MdPreview } from "md-editor-v3";
+import {
+  getCommentListService,
+  publishCommentService,
+  deleteCommentService
+} from "../../api/comment";
+import {
+  getCommentLikesService,
+  likeCommentService,
+  unlikeCommentService,
+  checkUserLikeService
+} from "../../api/commentLike";
 import "md-editor-v3/lib/preview.css";
 import { useUserInfoStore } from "../../store/userInfo";
 import {
@@ -10,7 +27,8 @@ import {
   publishArticleService,
   checkService
 } from "../../api/article";
-import { ElMessage } from "element-plus";
+import { getUserInfoByIdService } from "../../api/user";
+import { ElMessage, ElMessageBox } from "element-plus";
 const userInfoStore = useUserInfoStore();
 const route = useRoute();
 const router = useRouter();
@@ -125,6 +143,132 @@ const handleAuthorClick = (authorName) => {
     }
   });
 };
+
+const commentList = ref([]);
+const commentContent = ref("");
+const commentLoading = ref(false);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
+
+// 获取评论列表
+const getCommentList = async () => {
+  try {
+    const result = await getCommentListService({
+      articleId: route.query.articleId,
+      page: currentPage.value,
+      pageSize: pageSize.value
+    });
+
+    // 为每条评论获取评论者信息和点赞信息
+    const commentsWithInfo = await Promise.all(
+      result.data.list.map(async (comment) => {
+        const [userInfo, likeCount, likeStatus] = await Promise.all([
+          getCommenterInfo(comment.userId),
+          getCommentLikesService({ commentId: comment.commentId }),
+          checkUserLikeService({ commentId: comment.commentId })
+        ]);
+
+        return {
+          ...comment,
+          username: userInfo?.username || "用户已注销",
+          nickname: userInfo?.nickname,
+          avatar: userInfo?.avatarImage || "",
+          likeCount: likeCount.data || 0,
+          isLiked: likeStatus.data || false // 从服务器获取用户是否点赞
+        };
+      })
+    );
+
+    commentList.value = commentsWithInfo;
+    total.value = result.data.total;
+  } catch (error) {
+    ElMessage.error("获取评论失败");
+  }
+};
+
+// 处理评论点赞
+const handleCommentLike = async (comment) => {
+  try {
+    if (comment.isLiked) {
+      await unlikeCommentService({ commentId: comment.commentId });
+      comment.likeCount--;
+    } else {
+      await likeCommentService({ commentId: comment.commentId });
+      comment.likeCount++;
+    }
+    comment.isLiked = !comment.isLiked;
+  } catch (error) {
+    ElMessage.error("操作失败，请重试");
+  }
+};
+
+// 发布评论
+const handlePublishComment = async () => {
+  if (!commentContent.value.trim()) {
+    ElMessage.warning("评论内容不能为空");
+    return;
+  }
+
+  try {
+    commentLoading.value = true;
+    await publishCommentService({
+      articleId: route.query.articleId,
+      content: commentContent.value
+    });
+    ElMessage.success("发布评论成功");
+    commentContent.value = "";
+    getCommentList(); // 重新获取评论列表
+  } catch (error) {
+    ElMessage.error("发布评论失败");
+  } finally {
+    commentLoading.value = false;
+  }
+};
+
+// 删除评论
+const handleDeleteComment = async (commentId) => {
+  try {
+    await ElMessageBox.confirm("确定要删除这条评论吗？", "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
+    });
+
+    await deleteCommentService({
+      commentId: commentId
+    });
+    ElMessage.success("删除成功");
+    getCommentList(); // 重新获取评论列表
+  } catch (error) {
+    if (error !== "cancel") {
+      ElMessage.error("删除失败");
+    }
+  }
+};
+
+// 处理页码变化
+const handlePageChange = (page) => {
+  currentPage.value = page;
+  getCommentList();
+};
+//获取评论者信息
+const getCommenterInfo = async (userId) => {
+  try {
+    if (!userId) return null;
+    const result = await getUserInfoByIdService({
+      id: userId
+    });
+    return result.data;
+  } catch {
+    console.error("获取评论者信息失败");
+    return null;
+  }
+};
+
+onMounted(() => {
+  getCommentList();
+});
 </script>
 
 <template>
@@ -207,6 +351,103 @@ const handleAuthorClick = (authorName) => {
           <md-preview
             :modelValue="articleData.content"
             preview-theme="vuepress"
+          />
+        </div>
+      </div>
+
+      <!-- 评论区域 -->
+      <div class="comments-section">
+        <h3 class="comments-title">评论区</h3>
+
+        <!-- 发表评论 -->
+        <div class="comment-form">
+          <el-input
+            v-model="commentContent"
+            type="textarea"
+            :rows="3"
+            placeholder="写下你的评论..."
+            resize="none"
+          />
+          <div class="form-footer">
+            <el-button
+              type="primary"
+              @click="handlePublishComment"
+              :loading="commentLoading"
+            >
+              发表评论
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 评论列表 -->
+        <div class="comments-list" v-if="commentList.length > 0">
+          <div
+            v-for="comment in commentList"
+            :key="comment.id"
+            class="comment-item"
+          >
+            <div class="comment-header">
+              <div class="user-info">
+                <el-avatar
+                  :size="40"
+                  :src="comment.avatar"
+                  @click="handleAuthorClick(comment.username)"
+                />
+                <div class="user-meta">
+                  <span
+                    class="username"
+                    @click="handleAuthorClick(comment.username)"
+                  >
+                    {{ comment.username }}
+                  </span>
+                  <span class="comment-time">{{
+                    formatDate(comment.createTime)
+                  }}</span>
+                </div>
+              </div>
+              <div class="comment-actions">
+                <el-button
+                  type="primary"
+                  link
+                  @click="handleCommentLike(comment)"
+                  :class="{ 'is-liked': comment.isLiked }"
+                >
+                  <el-icon>
+                    <Promotion v-if="comment.isLiked" />
+                    <Collection v-else />
+                  </el-icon>
+                  {{ comment.likeCount }}
+                </el-button>
+                <el-button
+                  v-if="
+                    userInfoStore.userInfo.username === comment.username ||
+                    isAuthor
+                  "
+                  type="danger"
+                  link
+                  @click="handleDeleteComment(comment.commentId)"
+                >
+                  <el-icon><delete /></el-icon>
+                  删除
+                </el-button>
+              </div>
+            </div>
+            <div class="comment-content">{{ comment.content }}</div>
+          </div>
+        </div>
+
+        <!-- 空状态 -->
+        <el-empty v-else description="暂无评论" :image-size="100" />
+
+        <!-- 分页 -->
+        <div class="pagination" v-if="total > pageSize">
+          <el-pagination
+            v-model:current-page="currentPage"
+            :page-size="pageSize"
+            :total="total"
+            @current-change="handlePageChange"
+            layout="prev, pager, next"
+            background
           />
         </div>
       </div>
@@ -355,6 +596,115 @@ const handleAuthorClick = (authorName) => {
   font-size: 16px;
 }
 
+/* 评论区样式 */
+.comments-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #ebeef5;
+}
+
+.comments-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 24px;
+}
+
+.comment-form {
+  margin-bottom: 32px;
+}
+
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.comment-item {
+  padding: 16px;
+  background: #f8f9fb;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.comment-item:hover {
+  background: #f1f3f5;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.is-liked {
+  color: #ff4757 !important;
+}
+
+.comment-actions .el-button {
+  &:hover {
+    .el-icon {
+      transform: scale(1.2);
+    }
+  }
+  .el-icon {
+    transition: transform 0.3s ease;
+  }
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.username {
+  font-weight: 500;
+  color: #303133;
+  cursor: pointer;
+}
+
+.username:hover {
+  color: #409eff;
+}
+
+.comment-time {
+  font-size: 12px;
+  color: #909399;
+}
+
+.comment-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #606266;
+  white-space: pre-wrap;
+}
+
+.pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
 :deep(.md-preview-wrapper) {
   background-color: transparent !important;
   padding: 0 !important;
@@ -454,6 +804,10 @@ const handleAuthorClick = (authorName) => {
   }
 
   .article-content {
+    padding: 12px;
+  }
+
+  .comment-section {
     padding: 12px;
   }
 

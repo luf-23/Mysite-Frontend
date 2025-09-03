@@ -54,6 +54,17 @@ export function getUserInfoByNameService(params) {
   });
 }
 
+export function getUserInfoByIdService(params) {
+  return request({
+    url: "/user/getInfoById",
+    method: "get",
+    params,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    }
+  });
+}
+
 export function sendEmailCaptchaService(params) {
   return request({
     url: "/user/captcha",
