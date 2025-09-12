@@ -2,7 +2,7 @@ import axios from "axios";
 import { ElMessage } from "element-plus";
 import { useTokenStore } from "../store/token.js";
 import router from "../router/index.js";
-//const baseURL = "http://43.142.2.253:8080/";
+//const baseURL = "http://43.142.2.253/api/";
 const baseURL = "http://localhost:8080/";
 const request = axios.create({
   baseURL,
