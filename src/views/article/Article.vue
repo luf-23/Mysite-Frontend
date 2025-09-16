@@ -179,8 +179,11 @@ const getCommentList = async () => {
         };
       })
     );
-
     commentList.value = commentsWithInfo;
+    //按照日期排序
+    commentList.value.sort(
+      (a, b) => new Date(b.createTime) - new Date(a.createTime)
+    );
     total.value = result.data.total;
   } catch (error) {
     ElMessage.error("获取评论失败");

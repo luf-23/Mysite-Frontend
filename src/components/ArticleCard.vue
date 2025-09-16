@@ -42,6 +42,10 @@ const props = defineProps({
   showChangeCoverImage: {
     type: Boolean,
     default: false
+  },
+  showAuthor: {
+    type: Boolean,
+    default: true
   }
 });
 
@@ -113,7 +117,7 @@ const handleChangeCoverImage = (e) => {
     </div>
 
     <div class="article-info">
-      <span class="author">作者：{{ article.author }}</span>
+      <span class="author" v-if="showAuthor">作者：{{ article.author }}</span>
       <span class="time">发布时间：{{ formatDate(article.createTime) }}</span>
       <span class="time">更新时间：{{ formatDate(article.updateTime) }}</span>
     </div>

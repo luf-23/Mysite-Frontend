@@ -291,6 +291,7 @@ const handleUpload = async (file) => {
           :showDelete="true"
           :showCategoryId="false"
           :showChangeCoverImage="true"
+          :showAuthor="false"
           @click="() => handleRowClick(item)"
           @delete="() => handleDelete(item)"
           @changeCoverImage="() => handleChangeCoverImage(item)"
