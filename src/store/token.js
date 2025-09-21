@@ -3,7 +3,7 @@ import { ref } from "vue";
 export const useTokenStore = defineStore(
   "token",
   () => {
-    const token = ref(null);
+    const token = ref(null); // 存储accessToken
     const setToken = (newToken) => {
       token.value = newToken;
     };
