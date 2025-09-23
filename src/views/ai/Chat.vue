@@ -5,11 +5,11 @@ import { storeToRefs } from "pinia";
 import { ElMessage, ElSelect, ElOption } from "element-plus";
 import { ElMessageBox } from "element-plus";
 import "github-markdown-css";
-import { getBaseURL } from "../../utils/request";
-import { useTokenStore } from "../../store/token";
 import { renderAssistantMessage } from "../../utils/markdown/chat/assistant.js";
 import { renderUserMessage } from "../../utils/markdown/chat/user.js";
 import { useUserInfoStore } from "../../store/userInfo.js";
+import { chatStreamService } from "../../api/ai.js";
+import { getUserInfoService } from "../../api/user.js";
 const userInfoStore = useUserInfoStore();
 const { userInfo } = storeToRefs(userInfoStore);
 const avatarUrl = ref(userInfo.value?.avatarImage || "/avatar/avatar1.png");
@@ -57,7 +57,6 @@ const handleStreamChat = async () => {
   scrollToBottom();
 
   isLoading.value = true;
-
   isthinking.value = true;
 
   try {
@@ -66,20 +65,17 @@ const handleStreamChat = async () => {
       role: msg.role,
       content: msg.content
     }));
+
     chatStore.addMessage("assistant", ""); // 添加空的AI消息占位符
-    const baseURL = getBaseURL();
-    const token = useTokenStore().token;
-    const response = await fetch(`${baseURL}ai/chat-stream`, {
-      headers: {
-        Authorization: `${token}`,
-        "Content-Type": "application/json"
-      },
-      method: "POST",
-      body: JSON.stringify({
-        messages: messages,
-        model: selectedModel.value,
-        temperature: temperature.value
-      })
+
+    // 在发起AI流式请求之前，先调用一个常规API确保token有效
+    await getUserInfoService();
+
+    // token确保有效后，使用AI API发起流式请求
+    const response = await chatStreamService({
+      messages: messages,
+      model: selectedModel.value,
+      temperature: temperature.value
     });
 
     if (!response.ok) {
