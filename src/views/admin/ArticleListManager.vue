@@ -5,7 +5,6 @@ import {
 } from "../../api/admin";
 import { getAuthorNameService } from "../../api/community";
 import { ref } from "vue";
-import LeftMenu from "../../components/LeftMenu.vue";
 import ArticleCard from "../../components/ArticleCard.vue";
 import { check } from "../../utils/admin/check";
 import { useRouter } from "vue-router";
@@ -102,16 +101,14 @@ const handleRowClick = (item) => {
 </script>
 
 <template>
-  <LeftMenu>
-    <div class="article-list">
-      <ArticleCard
-        v-for="item in articleList"
-        :article="item"
-        :key="item.articleId"
-        :onClick="() => handleRowClick(item)"
-      />
-    </div>
-  </LeftMenu>
+  <div class="article-list-container">
+    <ArticleCard
+      v-for="item in articleList"
+      :article="item"
+      :key="item.articleId"
+      :onClick="() => handleRowClick(item)"
+    />
+  </div>
 </template>
 
 <style scoped>

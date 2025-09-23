@@ -1,6 +1,5 @@
 <script setup>
 import { reactive, ref, onMounted, onUnmounted } from "vue";
-import LeftMenu from "../components/LeftMenu.vue";
 import { useUserInfoStore } from "../store/userInfo.js";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
@@ -169,68 +168,66 @@ const handleAvatarClick = () => {
 </script>
 
 <template>
-  <LeftMenu>
-    <div class="profile-container">
-      <el-card class="profile-card">
-        <div class="background-image">
-          <img
-            :src="
-              isAuthor ? userInfo.backgroundImage : userInfoData.backgroundImage
-            "
-            alt="Background"
-          />
-        </div>
+  <div class="profile-container">
+    <el-card class="profile-card">
+      <div class="background-image">
+        <img
+          :src="
+            isAuthor ? userInfo.backgroundImage : userInfoData.backgroundImage
+          "
+          alt="Background"
+        />
+      </div>
 
-        <div class="user-info">
-          <el-avatar
-            :size="100"
-            :src="isAuthor ? userInfo.avatarImage : userInfoData.avatarImage"
-            class="avatar"
-            style="cursor: pointer"
-            @click="handleAvatarClick"
-          />
+      <div class="user-info">
+        <el-avatar
+          :size="100"
+          :src="isAuthor ? userInfo.avatarImage : userInfoData.avatarImage"
+          class="avatar"
+          style="cursor: pointer"
+          @click="handleAvatarClick"
+        />
 
-          <div class="info-content">
-            <h2 class="nickname">
-              {{ isAuthor ? userInfo.nickname : userInfoData.nickname }}
-            </h2>
-            <div class="username">
-              @{{ isAuthor ? userInfo.username : userInfoData.username }}
-            </div>
-            <div class="signature">
-              {{ isAuthor ? userInfo.signature : userInfoData.signature }}
-            </div>
+        <div class="info-content">
+          <h2 class="nickname">
+            {{ isAuthor ? userInfo.nickname : userInfoData.nickname }}
+          </h2>
+          <div class="username">
+            @{{ isAuthor ? userInfo.username : userInfoData.username }}
           </div>
-
-          <div class="actions">
-            <el-button
-              type="primary"
-              size="small"
-              v-on:click="openDialog"
-              v-if="isAuthor"
-            >
-              编辑资料</el-button
-            >
+          <div class="signature">
+            {{ isAuthor ? userInfo.signature : userInfoData.signature }}
           </div>
         </div>
 
-        <el-tabs class="user-tabs">
-          <el-tab-pane label="基本信息">
-            <el-descriptions :column="1" border>
-              <el-descriptions-item label="用户名">{{
-                isAuthor ? userInfo.username : userInfoData.username
-              }}</el-descriptions-item>
-              <el-descriptions-item label="昵称">{{
-                isAuthor ? userInfo.nickname : userInfoData.nickname
-              }}</el-descriptions-item>
-              <el-descriptions-item label="个性签名">{{
-                isAuthor ? userInfo.signature : userInfoData.signature
-              }}</el-descriptions-item>
-            </el-descriptions>
-          </el-tab-pane>
-        </el-tabs>
-      </el-card>
-    </div>
+        <div class="actions">
+          <el-button
+            type="primary"
+            size="small"
+            v-on:click="openDialog"
+            v-if="isAuthor"
+          >
+            编辑资料</el-button
+          >
+        </div>
+      </div>
+
+      <el-tabs class="user-tabs">
+        <el-tab-pane label="基本信息">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="用户名">{{
+              isAuthor ? userInfo.username : userInfoData.username
+            }}</el-descriptions-item>
+            <el-descriptions-item label="昵称">{{
+              isAuthor ? userInfo.nickname : userInfoData.nickname
+            }}</el-descriptions-item>
+            <el-descriptions-item label="个性签名">{{
+              isAuthor ? userInfo.signature : userInfoData.signature
+            }}</el-descriptions-item>
+          </el-descriptions>
+        </el-tab-pane>
+      </el-tabs>
+    </el-card>
 
     <!-- 编辑对话框 -->
     <el-dialog
@@ -287,13 +284,13 @@ const handleAvatarClick = () => {
       :loading="uploadLoading"
       @confirm="handleUpload"
     />
-  </LeftMenu>
+  </div>
 </template>
 
 <style scoped>
 .profile-container {
-  padding: 20px;
-  min-height: calc(100vh - 40px);
+  padding: 0;
+  min-height: 100%;
 }
 
 .profile-card {

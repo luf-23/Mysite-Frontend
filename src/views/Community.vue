@@ -17,7 +17,8 @@ const isSearchVisible = ref(false);
 
 // 根据屏幕宽度设置搜索框的初始显示状态
 const setInitialSearchVisibility = () => {
-  isSearchVisible.value = window.innerWidth > 768;
+  //isSearchVisible.value = window.innerWidth > 768;
+  isSearchVisible.value = false;
 };
 
 // 在组件挂载时设置初始状态
@@ -210,12 +211,36 @@ const handleSearch = async function () {
 .fixed-header {
   position: fixed;
   top: 0;
-  left: 0;
+  left: 220px; /* 为侧边栏留出空间 */
   right: 0;
   background-color: #f5f7fa;
   z-index: 100;
   padding: 8px 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 响应式设计和侧边栏状态适配 */
+@media screen and (max-width: 768px) {
+  .fixed-header {
+    left: 0; /* 移动端侧边栏隐藏，头部占满宽度 */
+    top: 60px; /* 为顶部导航栏留出空间 */
+  }
+
+  .community-container {
+    padding-top: 160px; /* 为固定头部和顶部导航栏留出空间 */
+  }
+
+  .community-container.search-visible {
+    padding-top: 260px; /* 搜索框展开时增加上边距 */
+  }
+}
+
+/* 桌面端适配侧边栏折叠状态 */
+@media screen and (min-width: 769px) {
+  .fixed-header {
+    left: var(--sidebar-width, 220px); /* 使用CSS变量动态调整 */
+  }
 }
 
 .page-header {

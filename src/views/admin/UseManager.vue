@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import LeftMenu from "../../components/LeftMenu.vue";
 import { check } from "../../utils/admin/check";
 import { getUsersService } from "../../api/admin";
 check();
@@ -57,87 +56,81 @@ const handleClick = (item) => {
 </script>
 
 <template>
-  <LeftMenu>
-    <div class="container">
-      <h1 class="page-title">用户管理</h1>
+  <div class="user-manager-container">
+    <h1 class="page-title">用户管理</h1>
 
-      <div v-if="isLoading" class="loading">
-        <div class="spinner"></div>
-        <p>加载中...</p>
-      </div>
+    <div v-if="isLoading" class="loading">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
 
-      <div class="user-grid" v-else>
-        <div
-          class="user-card"
-          v-for="item in userList"
-          :key="item.userId"
-          :style="{
-            '--bg-image': item.backgroundImage
-              ? `url(${item.backgroundImage})`
-              : 'none'
-          }"
-          @click="() => handleClick(item)"
-        >
-          <div class="card-bg"></div>
+    <div class="user-grid" v-else>
+      <div
+        class="user-card"
+        v-for="item in userList"
+        :key="item.userId"
+        :style="{
+          '--bg-image': item.backgroundImage
+            ? `url(${item.backgroundImage})`
+            : 'none'
+        }"
+        @click="() => handleClick(item)"
+      >
+        <div class="card-bg"></div>
 
-          <div class="card-header">
-            <div class="avatar-container">
-              <img
-                :src="
-                  item.avatarImage || 'http://luf.woyioii.cn/avatar/avatar1.png'
-                "
-                alt="用户头像"
-                class="avatar"
-                @error="
-                  (e) =>
-                    (e.target.src = 'http://luf.woyioii.cn/avatar/avatar1.png')
-                "
-              />
-            </div>
-            <div class="user-basic">
-              <h3 class="username">{{ item.nickname || item.username }}</h3>
-              <p class="user-id">ID: {{ item.userId }}</p>
-            </div>
+        <div class="card-header">
+          <div class="avatar-container">
+            <img
+              :src="
+                item.avatarImage || 'http://luf.woyioii.cn/avatar/avatar1.png'
+              "
+              alt="用户头像"
+              class="avatar"
+              @error="
+                (e) =>
+                  (e.target.src = 'http://luf.woyioii.cn/avatar/avatar1.png')
+              "
+            />
           </div>
+          <div class="user-basic">
+            <h3 class="username">{{ item.nickname || item.username }}</h3>
+            <p class="user-id">ID: {{ item.userId }}</p>
+          </div>
+        </div>
 
-          <div class="card-body">
-            <p class="signature" v-if="item.signature">
-              "{{ item.signature }}"
-            </p>
-            <p class="signature placeholder" v-else>该用户还没有签名</p>
+        <div class="card-body">
+          <p class="signature" v-if="item.signature">"{{ item.signature }}"</p>
+          <p class="signature placeholder" v-else>该用户还没有签名</p>
 
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="label">用户名:</span>
-                <span class="value">{{ item.username }}</span>
-              </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">用户名:</span>
+              <span class="value">{{ item.username }}</span>
+            </div>
 
-              <div class="info-item">
-                <span class="label">最后登录:</span>
-                <span class="value">{{
-                  item.lastLoginTime || "暂无记录"
-                }}</span>
-              </div>
+            <div class="info-item">
+              <span class="label">最后登录:</span>
+              <span class="value">{{ item.lastLoginTime || "暂无记录" }}</span>
+            </div>
 
-              <div class="info-item">
-                <span class="label">登录IP:</span>
-                <span class="value">{{ item.lastLoginIp || "未知" }}</span>
-              </div>
+            <div class="info-item">
+              <span class="label">登录IP:</span>
+              <span class="value">{{ item.lastLoginIp || "未知" }}</span>
+            </div>
 
-              <div class="info-item">
-                <span class="label">注册时间:</span>
-                <span class="value">{{ item.createTime }}</span>
-              </div>
+            <div class="info-item">
+              <span class="label">注册时间:</span>
+              <span class="value">{{ item.createTime }}</span>
             </div>
           </div>
+        </div>
 
-          <div class="card-footer">
-            <span class="update-time">最后更新: {{ item.updateTime }}</span>
-          </div>
+        <div class="card-footer">
+          <span class="update-time">最后更新: {{ item.updateTime }}</span>
         </div>
       </div>
     </div>
-  </LeftMenu>
+  </div>
 </template>
 
 <style scoped>

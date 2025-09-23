@@ -31,6 +31,17 @@ const selectedModel = ref("deepseek-v3");
 const temperature = ref(0.4);
 const temperatureOptions = Array.from({ length: 11 }, (_, i) => i / 10); // 生成0.0到1.0的选项
 
+// 移动端侧边栏控制
+const isMobileSettingsVisible = ref(false);
+
+const toggleMobileSettings = () => {
+  isMobileSettingsVisible.value = !isMobileSettingsVisible.value;
+};
+
+const closeMobileSettings = () => {
+  isMobileSettingsVisible.value = false;
+};
+
 // 在组件加载时，如果没有对话，创建一个新的
 onMounted(() => {
   if (!currentChatId.value) {
@@ -175,541 +186,512 @@ const handleChatDelete = (chatId) => {
   });
 };
 
-// Markdown渲染方法已移至 utils/markdown.js
-
-const isSidebarVisible = ref(false);
-
-const toggleSidebar = () => {
-  isSidebarVisible.value = !isSidebarVisible.value;
-};
-
-const closeSidebar = () => {
-  isSidebarVisible.value = false;
-};
-
-// 点击对话项后自动隐藏侧边栏
-const handleChatSelect = (id) => {
-  chatStore.setCurrentChat(id);
+// 移动端选择对话后关闭设置面板
+const handleMobileChatSelect = (chatId) => {
+  chatStore.setCurrentChat(chatId);
   if (window.innerWidth <= 768) {
-    isSidebarVisible.value = false;
+    isMobileSettingsVisible.value = false;
   }
 };
+
+// Markdown渲染方法已移至 utils/markdown.js
 </script>
 
 <template>
-  <div class="chat-layout">
-    <!-- 遮罩层 -->
+  <div class="chat-container">
+    <!-- 移动端遮罩层 -->
     <div
-      class="sidebar-overlay"
-      :class="{ show: isSidebarVisible }"
-      @click="closeSidebar"
+      v-if="isMobileSettingsVisible"
+      class="mobile-overlay"
+      @click="closeMobileSettings"
     ></div>
 
-    <!-- 左侧对话列表 -->
-    <div class="chat-sidebar" :class="{ show: isSidebarVisible }">
-      <div class="sidebar-header">
-        <h2>对话设置</h2>
-        <div class="sidebar-controls">
-          <div class="control-item">
-            <label>模型选择：</label>
-            <el-select v-model="selectedModel" class="model-select">
-              <el-option
-                v-for="model in models"
-                :key="model.value"
-                :label="model.label"
-                :value="model.value"
-              />
-            </el-select>
-          </div>
-          <div class="control-item">
-            <label>采样温度：</label>
-            <el-select
-              v-model="temperature"
-              class="temperature-select"
-              placeholder="采样温度"
-            >
-              <el-option
-                v-for="temp in temperatureOptions"
-                :key="temp"
-                :label="temp.toFixed(1)"
-                :value="temp"
-              />
-            </el-select>
-          </div>
-        </div>
-        <div class="sidebar-divider"></div>
-        <h2>对话历史</h2>
-        <button class="new-chat-btn" @click="createNew">新对话</button>
+    <!-- 移动端设置侧边栏 -->
+    <div
+      class="mobile-settings-sidebar"
+      :class="{ show: isMobileSettingsVisible }"
+    >
+      <div class="mobile-settings-header">
+        <h3>对话设置</h3>
+        <button class="close-btn" @click="closeMobileSettings">×</button>
       </div>
 
-      <div class="chat-list">
+      <div class="mobile-settings-content">
+        <div class="setting-item">
+          <label>模型选择:</label>
+          <el-select v-model="selectedModel" style="width: 100%">
+            <el-option
+              v-for="model in models"
+              :key="model.value"
+              :label="model.label"
+              :value="model.value"
+            />
+          </el-select>
+        </div>
+
+        <div class="setting-item">
+          <label>采样温度:</label>
+          <el-select v-model="temperature" style="width: 100%">
+            <el-option
+              v-for="temp in temperatureOptions"
+              :key="temp"
+              :label="temp.toFixed(1)"
+              :value="temp"
+            />
+          </el-select>
+        </div>
+
+        <div class="setting-actions">
+          <el-button type="primary" @click="createNew" style="width: 100%"
+            >新对话</el-button
+          >
+        </div>
+
+        <!-- 移动端对话历史 -->
+        <div class="mobile-chat-history" v-if="chatList.length > 1">
+          <h4>对话历史</h4>
+          <div
+            v-for="(chat, index) in chatList"
+            :key="chat.id"
+            class="mobile-chat-item"
+            :class="{ active: chat.id === currentChatId }"
+            @click="handleMobileChatSelect(chat.id)"
+          >
+            <span>对话 {{ index + 1 }}</span>
+            <button
+              v-if="chatList.length > 1"
+              class="mobile-delete-btn"
+              @click.stop="handleChatDelete(chat.id)"
+            >
+              删除
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 顶部控制面板（桌面端） -->
+    <div class="chat-header desktop-only">
+      <div class="header-left">
+        <h1>AI 助手</h1>
+      </div>
+
+      <!-- 对话设置区域 -->
+      <div class="chat-controls">
+        <div class="control-group">
+          <label>模型:</label>
+          <el-select v-model="selectedModel" size="small" style="width: 140px">
+            <el-option
+              v-for="model in models"
+              :key="model.value"
+              :label="model.label"
+              :value="model.value"
+            />
+          </el-select>
+        </div>
+
+        <div class="control-group">
+          <label>温度:</label>
+          <el-select v-model="temperature" size="small" style="width: 80px">
+            <el-option
+              v-for="temp in temperatureOptions"
+              :key="temp"
+              :label="temp.toFixed(1)"
+              :value="temp"
+            />
+          </el-select>
+        </div>
+
+        <div class="control-group">
+          <el-button size="small" @click="createNew">新对话</el-button>
+          <el-button size="small" type="danger" @click="clearChat"
+            >清空</el-button
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- 对话历史标签页（桌面端） -->
+    <div class="chat-tabs desktop-only" v-if="chatList.length > 1">
+      <div class="tabs-container">
         <div
           v-for="(chat, index) in chatList"
           :key="chat.id"
-          class="chat-item"
+          class="chat-tab"
           :class="{ active: chat.id === currentChatId }"
-          @click="handleChatSelect(chat.id)"
+          @click="chatStore.setCurrentChat(chat.id)"
         >
-          <span class="chat-title">对话 {{ index + 1 }}</span>
-          <button class="delete-btn" @click.stop="handleChatDelete(chat.id)">
-            删除
-          </button>
+          <span>对话 {{ index + 1 }}</span>
+          <el-button
+            v-if="chatList.length > 1"
+            size="small"
+            type="danger"
+            link
+            @click.stop="handleChatDelete(chat.id)"
+            class="delete-tab-btn"
+          >
+            ×
+          </el-button>
         </div>
       </div>
     </div>
 
-    <!-- 右侧聊天区域 -->
-    <div class="chat-main">
-      <div class="chat-header">
-        <div class="header-left">
-          <h1>AI 助手</h1>
-        </div>
-        <button class="clear-btn" @click="clearChat">清空当前对话</button>
-      </div>
-
-      <!-- 消息列表 -->
-      <div class="chat-messages" ref="chatContainer">
-        <template v-if="currentChatId">
-          <div
-            v-for="msg in chatList.find((c) => c.id === currentChatId)
-              ?.messages"
-            :key="msg.id"
-            :class="['message-container', msg.role]"
-          >
-            <div class="avatar">
-              <img
-                :src="
-                  msg.role === 'assistant' ? '/avatar/avatar2.png' : avatarUrl
-                "
-                :alt="msg.role"
-              />
-            </div>
-            <div class="message-wrapper">
-              <div class="message">
-                <div
-                  v-if="msg.role === 'assistant'"
-                  class="message-content markdown-body"
-                  v-html="renderAssistantMessage(msg.content)"
-                ></div>
-                <div
-                  v-else-if="msg.role === 'user'"
-                  class="message-content"
-                  v-html="renderUserMessage(msg.content)"
-                ></div>
-                <div class="message-time">
-                  {{ new Date(msg.timestamp).toLocaleTimeString() }}
-                </div>
+    <!-- 消息列表 -->
+    <div class="chat-messages" ref="chatContainer">
+      <template v-if="currentChatId">
+        <div
+          v-for="msg in chatList.find((c) => c.id === currentChatId)?.messages"
+          :key="msg.id"
+          :class="['message-container', msg.role]"
+        >
+          <div class="avatar">
+            <img
+              :src="
+                msg.role === 'assistant' ? '/avatar/avatar2.png' : avatarUrl
+              "
+              :alt="msg.role"
+            />
+          </div>
+          <div class="message-wrapper">
+            <div class="message">
+              <div
+                v-if="msg.role === 'assistant'"
+                class="message-content markdown-body"
+                v-html="renderAssistantMessage(msg.content)"
+              ></div>
+              <div
+                v-else-if="msg.role === 'user'"
+                class="message-content"
+                v-html="renderUserMessage(msg.content)"
+              ></div>
+              <div class="message-time">
+                {{ new Date(msg.timestamp).toLocaleTimeString() }}
               </div>
             </div>
           </div>
-        </template>
-      </div>
-
-      <!-- 输入框 -->
-      <div class="chat-input">
-        <textarea
-          v-model="inputMessage"
-          placeholder="请输入文本..."
-          @keyup.enter.ctrl="handleStreamChat"
-          rows="3"
-        ></textarea>
-        <button @click="handleStreamChat" :disabled="isLoading">发送</button>
-      </div>
+        </div>
+      </template>
     </div>
 
-    <!-- 移动端菜单按钮 -->
-    <button class="menu-btn" @click="toggleSidebar">
-      <span style="font-size: 1.5rem">☰</span>
+    <!-- 输入框 -->
+    <div class="chat-input">
+      <textarea
+        v-model="inputMessage"
+        placeholder="请输入文本..."
+        @keyup.enter.ctrl="handleStreamChat"
+        rows="3"
+      ></textarea>
+      <button @click="handleStreamChat" :disabled="isLoading">
+        {{ isLoading ? "发送中..." : "发送" }}
+      </button>
+    </div>
+
+    <!-- 移动端汉堡菜单按钮 -->
+    <button class="mobile-menu-btn" @click="toggleMobileSettings">
+      <span>三</span>
+    </button>
+
+    <!-- 移动端清空按钮 -->
+    <button class="mobile-clear-btn" @click="clearChat">
+      清空当前会话记录
     </button>
   </div>
 </template>
-
 <style scoped>
-.chat-layout {
+.chat-container {
   display: flex;
-  height: 100vh;
+  flex-direction: column;
+  height: 100%;
   background-color: #f7fbfe;
   position: relative;
 }
 
-/* 移动端适配 */
-@media screen and (max-width: 768px) {
-  .chat-layout {
-    flex-direction: column;
-  }
-
-  .chat-sidebar {
-    width: 100%;
-    height: 100%;
-    position: fixed;
-    z-index: 10;
-    transform: translateX(-100%);
-    background-color: #fff;
-    transition: transform 0.3s ease;
-  }
-
-  .chat-sidebar.show {
-    transform: translateX(0);
-  }
-
-  .sidebar-overlay.show {
-    display: block;
-  }
-
-  .chat-main {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .chat-header {
-    padding: 0.5rem;
-  }
-
-  .header-left {
-    gap: 0.5rem;
-  }
-
-  .chat-header h1 {
-    font-size: 1.2rem;
-  }
-
-  .model-select {
-    width: 120px;
-  }
-
-  .temperature-select {
-    width: 120px;
-  }
-
-  .clear-btn {
-    padding: 0.3rem 0.8rem;
-    font-size: 0.9rem;
-  }
-
-  .message {
-    max-width: 100%;
-    padding: 0.7rem 0.8rem;
-    font-size: 0.9rem;
-  }
-
-  .message-container {
-    margin-bottom: 0.8rem;
-  }
-
-  .avatar {
-    width: 15px !important;
-    height: 15px !important;
-  }
-
-  .message-wrapper {
-    max-width: 75% !important; /* 移动端适当增加宽度 */
-    margin: 0.3rem 0;
-  }
-
-  .message {
-    padding: 0.5rem !important;
-    max-width: 100% !important;
-  }
-
-  /* 优化移动端消息布局 */
-  .message-container.assistant .message-wrapper {
-    margin-right: 8px !important;
-    align-items: flex-start;
-  }
-
-  .message-container.user .message-wrapper {
-    margin-left: 8px !important;
-    align-items: flex-end;
-  }
-
-  /* 优化移动端代码块显示 */
-  .message.assistant .markdown-body pre {
-    margin: 0.5rem 0;
-    padding: 0.75rem;
-    font-size: 0.9rem;
-  }
-
-  .message.assistant .markdown-body code {
-    font-size: 0.9rem;
-  }
-
-  /* 优化思考状态显示 */
-  .message.assistant:last-child.thinking::after {
-    bottom: -18px;
-    left: 32px; /* 对齐头像右侧 */
-    font-size: 0.8rem;
-    color: #3498db;
-  }
-
-  .message-container {
-    gap: 0.5rem;
-  }
-
-  .message-time {
-    font-size: 0.7rem;
-  }
-
-  .chat-input {
-    padding: 0.5rem;
-  }
-
-  .chat-input textarea {
-    padding: 0.5rem;
-    min-height: 40px;
-    font-size: 0.9rem;
-  }
-
-  .chat-input button {
-    padding: 0.6rem 1.2rem;
-    font-size: 0.9rem;
-  }
-
-  .menu-btn {
-    display: block;
-    position: fixed;
-    top: 80px;
-    left: 20px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    z-index: 11;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .menu-btn:active {
-    background-color: #45a049;
-  }
-
-  /* 代码块在移动端的适配 */
-  .message :deep(.markdown-body pre) {
-    max-width: 100%;
-    overflow-x: auto;
-    font-size: 0.8rem;
-    padding: 0.6rem;
-    margin: 0.5rem 0;
-  }
-
-  .message :deep(.markdown-body) {
-    font-size: 0.9rem;
-  }
-
-  .message :deep(.markdown-body p) {
-    margin: 0.5rem 0;
-  }
-
-  /* 移动端的图片适配 */
-  .message :deep(.markdown-body img) {
-    max-width: 100%;
-    height: auto;
-  }
-
-  /* 移动端消息布局优化 */
-  .message {
-    margin: 0.3rem 0;
-    padding: 0 0.3rem;
-    gap: 0.3rem;
-  }
-
-  .message-content {
-    padding: 0.5rem;
-    font-size: 0.95rem;
-  }
-
-  .message-time {
-    font-size: 0.7rem;
-    margin-top: 0.25rem;
-  }
-
-  .message.user .message-content {
-    border-radius: 12px 12px 4px 12px;
-  }
-
-  .message.assistant .message-content {
-    border-radius: 12px 12px 12px 4px;
-  }
+/* 移动端遮罩层 */
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1500;
+  backdrop-filter: blur(4px);
 }
 
-/* 在大屏幕上隐藏菜单按钮 */
-@media screen and (min-width: 769px) {
-  .menu-btn {
-    display: none;
-  }
+/* 移动端设置侧边栏 */
+.mobile-settings-sidebar {
+  position: fixed;
+  top: 60px; /* 为TopBar留出空间 */
+  left: 0;
+  width: 280px;
+  height: calc(100vh - 60px);
+  background: #fff;
+  z-index: 2000;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  display: none; /* 默认在桌面端隐藏 */
 }
 
-/* 恢复其他原有样式 */
-.chat-sidebar {
-  width: 250px;
-  background-color: #fff;
-  border-right: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
+.mobile-settings-sidebar.show {
+  transform: translateX(0);
 }
 
-.sidebar-header {
-  padding: 1rem;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.sidebar-header h2 {
-  margin: 0;
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
-  color: #333;
-}
-
-.sidebar-controls {
-  margin-bottom: 1rem;
-}
-
-.control-item {
-  margin-bottom: 1rem;
-}
-
-.control-item label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #666;
-}
-
-.sidebar-divider {
-  height: 1px;
-  background-color: #e0e0e0;
-  margin: 1rem 0;
-}
-
-.model-select,
-.temperature-select {
-  width: 100% !important;
-}
-
-.new-chat-btn {
-  margin-top: 1rem;
-  width: 100%;
-  padding: 0.5rem;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.chat-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-}
-
-.chat-item {
+.mobile-settings-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  border-radius: 4px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.mobile-settings-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
   cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
 }
 
-.chat-item:hover {
-  background-color: #f0f0f0;
+.close-btn:hover {
+  background: #e9ecef;
 }
 
-.chat-item.active {
-  background-color: #ebf5fb;
+.mobile-settings-content {
+  padding: 20px;
+  overflow-y: auto;
+  height: calc(100% - 70px);
 }
 
-.delete-btn {
-  padding: 0.2rem 0.5rem;
-  background-color: #ff5252;
+.setting-item {
+  margin-bottom: 20px;
+}
+
+.setting-item label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #555;
+}
+
+.setting-actions {
+  margin: 24px 0;
+}
+
+.mobile-chat-history {
+  margin-top: 24px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 20px;
+}
+
+.mobile-chat-history h4 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.mobile-chat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mobile-chat-item:hover {
+  background: #e9ecef;
+}
+
+.mobile-chat-item.active {
+  background: #e3f2fd;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.mobile-delete-btn {
+  background: #dc3545;
   color: white;
   border: none;
+  padding: 4px 8px;
   border-radius: 4px;
+  font-size: 12px;
   cursor: pointer;
-  opacity: 0;
 }
 
-.chat-item:hover .delete-btn {
-  opacity: 1;
+/* 移动端汉堡菜单按钮 */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 80px;
+  left: 20px; /* 移到最左边 */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.3s ease;
 }
 
-.chat-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+.mobile-menu-btn:active {
+  transform: scale(0.95);
+}
+
+/* 移动端清空按钮 */
+.mobile-clear-btn {
+  display: none;
+  position: fixed;
+  top: 80px;
+  right: 20px; /* 保持在最右边 */
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px; /* 改为长方形 */
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  min-width: auto;
+}
+
+.mobile-clear-btn:active {
+  transform: scale(0.95);
 }
 
 .chat-header {
-  padding: 1rem;
   background-color: #fff;
   border-bottom: 1px solid #e0e0e0;
+  padding: 16px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.chat-header h1 {
+.header-left h1 {
   margin: 0;
   font-size: 1.5rem;
   color: #333;
+  font-weight: 600;
 }
 
-.model-select {
-  width: 150px;
+.chat-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
-.temperature-select {
-  width: 120px;
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.clear-btn {
-  padding: 0.5rem 1rem;
-  background-color: #f44336;
-  color: white;
-  border: none;
-  border-radius: 4px;
+.control-group label {
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.chat-tabs {
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0 24px;
+  overflow-x: auto;
+}
+
+.tabs-container {
+  display: flex;
+  gap: 4px;
+  min-height: 48px;
+  align-items: flex-end;
+}
+
+.chat-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
   cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-height: 36px;
 }
+
+.chat-tab:hover {
+  background: #e8f4fd;
+}
+
+.chat-tab.active {
+  background: #fff;
+  border-color: #3498db;
+  color: #3498db;
+  font-weight: 500;
+}
+
+.delete-tab-btn {
+  font-size: 16px !important;
+  padding: 0 !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 0.3rem; /* 进一步减小内边距 */
+  padding: 16px 24px;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem; /* 减小消息之间的间距 */
-  height: calc(100vh - 140px); /* 减去头部和底部的高度 */
+  gap: 16px;
 }
 
 .message-container {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 0.5rem;
-  gap: 0.3rem; /* 减小头像和消息之间的间距 */
+  gap: 12px;
   width: 100%;
 }
 
 .message-container.user {
   flex-direction: row-reverse;
-}
-
-@media screen and (max-width: 768px) {
-  .message-container {
-    margin-bottom: 0.3rem;
-    gap: 0.2rem; /* 移动端进一步减小间距 */
-  }
 }
 
 .avatar {
@@ -721,13 +703,6 @@ const handleChatSelect = (id) => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-@media screen and (max-width: 768px) {
-  .chat-layout .avatar {
-    width: 28px !important;
-    height: 28px !important;
-  }
-}
-
 .avatar img {
   width: 100%;
   height: 100%;
@@ -737,36 +712,29 @@ const handleChatSelect = (id) => {
 .message-wrapper {
   flex: 1;
   max-width: 85%;
-  width: auto;
   display: flex;
   flex-direction: column;
 }
 
 .message-container.user .message-wrapper {
-  display: flex;
   align-items: flex-end;
 }
 
 .message-container.assistant .message-wrapper {
-  display: flex;
   align-items: flex-start;
 }
 
-/* 修改现有的message样式 */
 .message {
-  max-width: 100%;
-  width: fit-content;
-  padding: 1rem;
+  padding: 12px 16px;
   border-radius: 12px;
-  position: relative;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  margin: 0 8px; /* 增加左右间距，避免消息太靠近头像 */
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .message-container.user .message {
   background-color: #3498db;
   color: white;
-  font-size: 13px;
   border-top-right-radius: 4px;
 }
 
@@ -776,51 +744,18 @@ const handleChatSelect = (id) => {
   border-top-left-radius: 4px;
 }
 
-/* 添加消息气泡的小尾巴 */
-.message::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  width: 12px;
-  height: 12px;
-}
-
-.message-container.assistant .message::before {
-  left: -6px;
-  border-radius: 0 0 12px 0;
-  border: 6px solid #fff;
-  border-left-color: transparent;
-  border-top-color: transparent;
-  box-shadow: 2px 2px 0 0 #e0e0e0;
-}
-
-.message-container.user .message::before {
-  right: -6px;
-  border-radius: 0 0 0 12px;
-  border: 6px solid #3498db;
-  border-right-color: transparent;
-  border-top-color: transparent;
-}
-
-/* 优化消息气泡和内容的样式 */
-.message-wrapper .message {
-  transition: transform 0.2s ease;
-}
-
-.message-wrapper:hover .message {
-  transform: translateY(-1px);
-}
-
 .message-content {
-  position: relative;
-  z-index: 1;
+  line-height: 1.6;
+}
+
+.message-container.user .message-content {
+  color: #fff;
 }
 
 .message-time {
   margin-top: 4px;
   font-size: 0.75rem;
   color: rgba(0, 0, 0, 0.4);
-  text-align: right;
 }
 
 .message-container.user .message-time {
@@ -847,143 +782,170 @@ const handleChatSelect = (id) => {
   padding: 2px 4px;
 }
 
-/* 用户消息样式 */
-.message-container.user .message-content {
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.5;
-  font-size: 14px;
-  color: #d9e7eb;
-}
-
-/* 添加输入状态提示 */
-.message.assistant:last-child {
-  position: relative;
-}
-
-.message.assistant:last-child.thinking::after {
-  content: "正在思考...";
-  position: absolute;
-  bottom: -20px;
-  left: 0;
-  font-size: 12px;
-  color: #666;
-  animation: thinking 1.5s infinite;
-}
-
-@keyframes thinking {
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 9;
-}
-
-/* 输入框区域样式 */
 .chat-input {
-  padding: 1rem;
   background-color: #fff;
   border-top: 1px solid #e0e0e0;
+  padding: 12px 20px;
   display: flex;
-  gap: 1rem;
-  align-items: center;
-  position: relative;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  gap: 10px;
+  align-items: flex-end;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .chat-input textarea {
   flex: 1;
-  padding: 0.8rem 1rem;
+  padding: 10px 14px;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 6px;
+  font-size: 14px;
   line-height: 1.5;
   resize: none;
-  height: 56px;
-  min-height: 56px;
-  max-height: 56px;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  display: block;
-  margin: 0;
-  box-sizing: border-box;
+  height: 50px;
+  max-height: 120px;
+  transition: border-color 0.3s ease;
+  font-family: inherit;
 }
 
 .chat-input textarea:focus {
   outline: none;
   border-color: #3498db;
-  box-shadow: 0 2px 6px rgba(52, 152, 219, 0.2);
-}
-
-.chat-input textarea::placeholder {
-  color: #999;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15);
 }
 
 .chat-input button {
-  padding: 0 1.5rem;
-  height: 56px;
+  padding: 10px 20px;
   background-color: #3498db;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   white-space: nowrap;
+  min-height: 50px;
 }
 
-.chat-input button:hover {
+.chat-input button:hover:not(:disabled) {
   background-color: #2980b9;
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(52, 152, 219, 0.3);
-}
-
-.chat-input button:active {
-  transform: translateY(0);
 }
 
 .chat-input button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
-/* 移动端输入框适配 */
+/* 响应式设计 */
 @media screen and (max-width: 768px) {
+  /* 显示移动端元素 */
+  .mobile-settings-sidebar {
+    display: block;
+  }
+
+  .mobile-menu-btn,
+  .mobile-clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 隐藏桌面端元素 */
+  .desktop-only {
+    display: none !important;
+  }
+
+  .chat-messages {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .message {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
   .chat-input {
-    padding: 0.75rem;
-    gap: 0.5rem;
+    padding: 12px 16px;
+    gap: 8px;
   }
 
   .chat-input textarea {
-    padding: 0.6rem 0.75rem;
-    font-size: 0.95rem;
-    height: 48px;
-    min-height: 48px;
-    max-height: 48px;
+    min-height: 44px;
+    max-height: 88px;
+    padding: 8px 12px;
+    font-size: 14px;
   }
 
   .chat-input button {
-    padding: 0 1.2rem;
-    height: 48px;
-    font-size: 0.95rem;
+    padding: 8px 16px;
+    min-height: 44px;
+    font-size: 14px;
   }
+}
+
+/* 桌面端确保移动端元素隐藏 */
+@media screen and (min-width: 769px) {
+  .mobile-settings-sidebar {
+    display: none !important;
+  }
+
+  .mobile-menu-btn,
+  .mobile-clear-btn {
+    display: none !important;
+  }
+
+  .mobile-overlay {
+    display: none !important;
+  }
+}
+
+/* 滚动条样式 */
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.tabs-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tabs-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.tabs-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.mobile-settings-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.mobile-settings-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.mobile-settings-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
 }
 </style>

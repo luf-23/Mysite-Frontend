@@ -5,7 +5,6 @@ import { useTokenStore } from "../store/token";
 import { useUserInfoStore } from "../store/userInfo";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
-import LeftMenu from "../components/LeftMenu.vue";
 import {
   User,
   Document,
@@ -104,84 +103,82 @@ const handleWelcomeClick = () => {
 </script>
 
 <template>
-  <div class="home-container">
-    <LeftMenu />
-    <el-main class="main-content" v-loading="loading">
-      <!-- 顶部欢迎区域 -->
-      <div
-        class="welcome-section"
-        :style="{
-          backgroundImage: `url(${
-            userInfo.backgroundImage || '/background/background1.jpg'
-          })`
-        }"
-        @click="handleWelcomeClick"
-      >
-        <div class="welcome-content">
-          <el-avatar
-            :size="64"
-            :src="userInfo.avatarImage || '/avatar/avatar1.png'"
-          />
-          <div class="welcome-text">
-            <h2>{{ timeOfDay }}，{{ userInfo.nickname || "亲爱的用户" }}</h2>
-            <p class="signature">
-              {{ userInfo.signature || "这个人很懒，还没有设置签名" }}
-            </p>
-          </div>
-          <div class="date-time">
-            <p>
-              {{ currentDate.toLocaleString("zh-CN", { hour12: false }) }}
-            </p>
-          </div>
+  <div class="home-page">
+    <!-- 顶部欢迎区域 -->
+    <div
+      class="welcome-section"
+      :style="{
+        backgroundImage: `url(${
+          userInfo.backgroundImage || '/background/background1.jpg'
+        })`
+      }"
+      @click="handleWelcomeClick"
+    >
+      <div class="welcome-content">
+        <el-avatar
+          :size="64"
+          :src="userInfo.avatarImage || '/avatar/avatar1.png'"
+        />
+        <div class="welcome-text">
+          <h2>{{ timeOfDay }}，{{ userInfo.nickname || "亲爱的用户" }}</h2>
+          <p class="signature">
+            {{ userInfo.signature || "这个人很懒，还没有设置签名" }}
+          </p>
+        </div>
+        <div class="date-time">
+          <p>
+            {{ currentDate.toLocaleString("zh-CN", { hour12: false }) }}
+          </p>
         </div>
       </div>
+    </div>
 
-      <!-- 快捷入口区域 -->
-      <div class="quick-actions">
-        <h3>快捷入口</h3>
-        <div class="actions-grid">
-          <el-card
-            v-for="action in quickActions"
-            :key="action.title"
-            class="action-card"
-            :body-style="{ padding: '20px' }"
-            @click="router.push(action.path)"
-          >
-            <div class="action-content">
-              <el-icon :size="30" :color="action.color">
-                <component :is="action.icon" />
-              </el-icon>
-              <h4>{{ action.title }}</h4>
-              <p>{{ action.description }}</p>
-            </div>
-          </el-card>
-        </div>
+    <!-- 快捷入口区域 -->
+    <div class="quick-actions">
+      <h3>快捷入口</h3>
+      <div class="actions-grid">
+        <el-card
+          v-for="action in quickActions"
+          :key="action.title"
+          class="action-card"
+          :body-style="{ padding: '20px' }"
+          @click="router.push(action.path)"
+        >
+          <div class="action-content">
+            <el-icon :size="30" :color="action.color">
+              <component :is="action.icon" />
+            </el-icon>
+            <h4>{{ action.title }}</h4>
+            <p>{{ action.description }}</p>
+          </div>
+        </el-card>
       </div>
-    </el-main>
+    </div>
   </div>
 </template>
 
-<style>
-.home-container {
-  display: flex;
-  min-height: 100vh;
-  background-color: #f5f7fa;
-  padding: 0px;
-}
-
-.main-content {
-  flex: 1;
-  padding-left: 20px;
+<style scoped>
+.home-page {
+  padding: 0;
+  min-height: calc(100vh - 60px);
 }
 
 .welcome-section {
   background-size: cover;
   background-position: center;
-  border-radius: 12px;
-  height: 200px;
-  margin-bottom: 24px;
+  border-radius: 16px;
+  height: 220px;
+  margin-bottom: 32px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.welcome-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 .welcome-section::before {
@@ -191,133 +188,160 @@ const handleWelcomeClick = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2));
+  backdrop-filter: blur(1px);
 }
 
 .welcome-content {
   position: relative;
-  padding: 30px;
+  padding: 40px;
   color: white;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
+  height: 100%;
 }
 
 .welcome-text h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: 28px;
   margin-bottom: 8px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .signature {
   margin: 0;
-  font-size: 14px;
-  opacity: 0.9;
+  font-size: 16px;
+  opacity: 0.95;
+  font-style: italic;
 }
 
 .date-time {
   margin-left: auto;
   text-align: right;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .quick-actions {
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
+  padding: 32px;
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 .quick-actions h3 {
-  margin: 0 0 20px 0;
-  color: #333;
+  margin: 0 0 24px 0;
+  color: #1e293b;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .actions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
 }
 
 .action-card {
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  overflow: hidden;
 }
 
 .action-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  border-color: #e2e8f0;
 }
 
 .action-content {
   text-align: center;
+  padding: 8px 0;
 }
 
 .action-content h4 {
-  margin: 12px 0;
-  color: #333;
+  margin: 16px 0 8px 0;
+  color: #1e293b;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .action-content p {
   margin: 0;
   font-size: 14px;
-  color: #666;
+  color: #64748b;
+  line-height: 1.5;
 }
 
-.main-content {
-  cursor: pointer;
-}
-
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .home-container {
+  .home-page {
     padding: 0;
-  }
-
-  .main-content {
-    padding: 12px;
   }
 
   .welcome-section {
     height: auto;
-    min-height: 160px;
+    min-height: 180px;
+    margin-bottom: 24px;
+    border-radius: 12px;
   }
 
   .welcome-content {
     flex-direction: column;
     text-align: center;
-    padding: 20px;
-    gap: 12px;
-  }
-
-  .el-avatar {
-    flex-shrink: 0;
-  }
-
-  .welcome-text {
-    width: 100%;
+    padding: 24px;
+    gap: 16px;
   }
 
   .welcome-text h2 {
-    font-size: 18px;
+    font-size: 20px;
+  }
+
+  .signature {
+    font-size: 14px;
   }
 
   .date-time {
     width: 100%;
     margin: 0;
     text-align: center;
+    font-size: 14px;
+  }
+
+  .quick-actions {
+    padding: 20px;
+  }
+
+  .actions-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .action-card:hover {
+    transform: translateY(-4px) scale(1.01);
   }
 }
 
 @media (max-width: 480px) {
-  .main-content {
-    padding: 8px;
-  }
-
   .welcome-content {
-    padding: 16px;
+    padding: 20px;
   }
 
   .welcome-text h2 {
-    font-size: 16px;
+    font-size: 18px;
+  }
+
+  .quick-actions {
+    padding: 16px;
+  }
+
+  .quick-actions h3 {
+    font-size: 18px;
   }
 }
 </style>

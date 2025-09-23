@@ -17,9 +17,16 @@ import UseManager from "../views/admin/UseManager.vue";
 import AdminHome from "../views/admin/AdminHome.vue";
 const routes = [
   {
+    path: "/",
+    redirect: "/home"
+  },
+  {
     path: "/login",
     name: "Login",
-    component: Login
+    component: Login,
+    meta: {
+      title: "登录"
+    }
   },
   {
     path: "/home",
@@ -173,6 +180,13 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const tokenStore = useTokenStore();
   const token = tokenStore.token; // 获取 token
+
+  // 如果已登录且访问登录页，重定向到首页
+  if (to.path === "/login" && token) {
+    next("/home");
+    return;
+  }
+
   // 检查目标路由是否需要认证
   if (to.meta.requireAuth) {
     // 检查用户是否已登录（这里检查 localStorage 中的 token）
@@ -189,12 +203,6 @@ router.beforeEach((to, from, next) => {
   } else {
     // 不需要认证的路由直接放行
     next();
-  }
-});
-
-router.beforeEach((to) => {
-  if (to.path === "/") {
-    return "/login"; // 根路径跳转到登录页
   }
 });
 

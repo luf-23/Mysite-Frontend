@@ -1,5 +1,4 @@
 <script setup>
-import LeftMenu from "../../components/LeftMenu.vue";
 import { check } from "../../utils/admin/check";
 import { useRouter } from "vue-router";
 import { markRaw } from "vue";
@@ -83,90 +82,88 @@ const systemOverview = [
 </script>
 
 <template>
-  <LeftMenu>
-    <div class="admin-container">
-      <!-- 欢迎区域 -->
-      <div class="welcome-section">
-        <div class="welcome-content">
-          <div class="welcome-text">
-            <h1>管理员控制台</h1>
-            <p>欢迎回来，管理员</p>
+  <div class="admin-container">
+    <!-- 欢迎区域 -->
+    <div class="welcome-section">
+      <div class="welcome-content">
+        <div class="welcome-text">
+          <h1>管理员控制台</h1>
+          <p>欢迎回来，管理员</p>
+        </div>
+        <div class="welcome-time">{{ new Date().toLocaleTimeString() }}</div>
+      </div>
+      <div class="welcome-decoration"></div>
+    </div>
+
+    <!-- 系统概览 -->
+    <div class="overview-section">
+      <h2 class="section-title">
+        <el-icon><TrendCharts /></el-icon>
+        系统概览
+      </h2>
+      <div class="overview-grid">
+        <el-card
+          v-for="item in systemOverview"
+          :key="item.title"
+          class="overview-card"
+          :class="{ 'positive-trend': item.increase.includes('+') }"
+        >
+          <div class="overview-content">
+            <div class="overview-info">
+              <h3>{{ item.title }}</h3>
+              <div class="overview-value">{{ item.value }}</div>
+              <div class="overview-increase" :style="{ color: item.color }">
+                <el-icon v-if="item.increase.includes('+')" color="#67C23A"
+                  ><CaretTop
+                /></el-icon>
+                <el-icon v-else color="#F56C6C"><CaretBottom /></el-icon>
+                {{ item.increase }}
+              </div>
+            </div>
+            <div
+              class="overview-icon"
+              :style="{ backgroundColor: item.color + '15' }"
+            >
+              <el-icon :size="32" :color="item.color">
+                <component :is="item.icon" />
+              </el-icon>
+            </div>
           </div>
-          <div class="welcome-time">{{ new Date().toLocaleTimeString() }}</div>
-        </div>
-        <div class="welcome-decoration"></div>
-      </div>
-
-      <!-- 系统概览 -->
-      <div class="overview-section">
-        <h2 class="section-title">
-          <el-icon><TrendCharts /></el-icon>
-          系统概览
-        </h2>
-        <div class="overview-grid">
-          <el-card
-            v-for="item in systemOverview"
-            :key="item.title"
-            class="overview-card"
-            :class="{ 'positive-trend': item.increase.includes('+') }"
-          >
-            <div class="overview-content">
-              <div class="overview-info">
-                <h3>{{ item.title }}</h3>
-                <div class="overview-value">{{ item.value }}</div>
-                <div class="overview-increase" :style="{ color: item.color }">
-                  <el-icon v-if="item.increase.includes('+')" color="#67C23A"
-                    ><CaretTop
-                  /></el-icon>
-                  <el-icon v-else color="#F56C6C"><CaretBottom /></el-icon>
-                  {{ item.increase }}
-                </div>
-              </div>
-              <div
-                class="overview-icon"
-                :style="{ backgroundColor: item.color + '15' }"
-              >
-                <el-icon :size="32" :color="item.color">
-                  <component :is="item.icon" />
-                </el-icon>
-              </div>
-            </div>
-          </el-card>
-        </div>
-      </div>
-
-      <!-- 快捷操作区域 -->
-      <div class="quick-actions">
-        <h2 class="section-title">
-          <el-icon><Operation /></el-icon>
-          快捷操作
-        </h2>
-        <div class="actions-grid">
-          <el-card
-            v-for="action in quickActions"
-            :key="action.title"
-            class="action-card"
-            shadow="hover"
-            :body-style="{ padding: '24px' }"
-            @click="router.push(action.path)"
-          >
-            <div class="action-content">
-              <div
-                class="action-icon"
-                :style="{ backgroundColor: action.color + '15' }"
-              >
-                <el-icon :size="32" :color="action.color">
-                  <component :is="action.icon" />
-                </el-icon>
-              </div>
-              <h3>{{ action.title }}</h3>
-              <p>{{ action.description }}</p>
-            </div>
-          </el-card>
-        </div>
+        </el-card>
       </div>
     </div>
-  </LeftMenu>
+
+    <!-- 快捷操作区域 -->
+    <div class="quick-actions">
+      <h2 class="section-title">
+        <el-icon><Operation /></el-icon>
+        快捷操作
+      </h2>
+      <div class="actions-grid">
+        <el-card
+          v-for="action in quickActions"
+          :key="action.title"
+          class="action-card"
+          shadow="hover"
+          :body-style="{ padding: '24px' }"
+          @click="router.push(action.path)"
+        >
+          <div class="action-content">
+            <div
+              class="action-icon"
+              :style="{ backgroundColor: action.color + '15' }"
+            >
+              <el-icon :size="32" :color="action.color">
+                <component :is="action.icon" />
+              </el-icon>
+            </div>
+            <h3>{{ action.title }}</h3>
+            <p>{{ action.description }}</p>
+          </div>
+        </el-card>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>

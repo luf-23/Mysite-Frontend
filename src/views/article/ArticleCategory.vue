@@ -1,7 +1,6 @@
 <script setup>
 import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import LeftMenu from "../../components/LeftMenu.vue";
 import CategoryCard from "../../components/CategoryCard.vue";
 import {
   getCategoryListService,
@@ -209,9 +208,14 @@ const handleRowClick = (rowData) => {
 </script>
 
 <template>
-  <LeftMenu>
+  <div class="category-container">
     <div class="category-header">
-      <h2 class="page-title">文章分类</h2>
+      <div class="header-content">
+        <h2 class="page-title">文章分类</h2>
+        <p class="page-subtitle">
+          点击分类卡片可查看该分类下的文章列表，或在该分类下写新文章
+        </p>
+      </div>
       <el-button type="primary" @click="handleAdd">添加分类</el-button>
     </div>
 
@@ -237,76 +241,76 @@ const handleRowClick = (rowData) => {
       description="暂无文章分类,点击右上角创建"
       :image-size="200"
     />
-  </LeftMenu>
 
-  <!-- 添加分类对话框 -->
-  <el-dialog
-    v-model="dialogForAdd"
-    title="添加文章分类"
-    :width="dialogWidth"
-    :modal="true"
-    :close-on-click-modal="false"
-  >
-    <el-form
-      ref="formRefForAdd"
-      :model="formDataForAdd"
-      :rules="rulesForAdd"
-      label-width="80px"
+    <!-- 添加分类对话框 -->
+    <el-dialog
+      v-model="dialogForAdd"
+      title="添加文章分类"
+      :width="dialogWidth"
+      :modal="true"
+      :close-on-click-modal="false"
     >
-      <el-form-item label="分类名" prop="categoryName">
-        <el-input v-model="formDataForAdd.categoryName"></el-input>
-      </el-form-item>
-      <el-form-item label="描述" prop="categoryDescription">
-        <el-input
-          v-model="formDataForAdd.categoryDescription"
-          type="textarea"
-          :rows="4"
-        ></el-input>
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="closeAddDialog">取消</el-button>
-      <el-button type="primary" @click="submitForAddForm">提交</el-button>
-    </template>
-  </el-dialog>
+      <el-form
+        ref="formRefForAdd"
+        :model="formDataForAdd"
+        :rules="rulesForAdd"
+        label-width="80px"
+      >
+        <el-form-item label="分类名" prop="categoryName">
+          <el-input v-model="formDataForAdd.categoryName"></el-input>
+        </el-form-item>
+        <el-form-item label="描述" prop="categoryDescription">
+          <el-input
+            v-model="formDataForAdd.categoryDescription"
+            type="textarea"
+            :rows="4"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="closeAddDialog">取消</el-button>
+        <el-button type="primary" @click="submitForAddForm">提交</el-button>
+      </template>
+    </el-dialog>
 
-  <!-- 编辑分类对话框 -->
-  <el-dialog
-    v-model="dialogForEdit"
-    title="编辑"
-    :width="dialogWidth"
-    :modal="true"
-    :close-on-click-modal="false"
-  >
-    <el-form
-      ref="formRefForEdit"
-      :model="formDataForEdit"
-      :rules="rulesForEdit"
-      label-width="80px"
+    <!-- 编辑分类对话框 -->
+    <el-dialog
+      v-model="dialogForEdit"
+      title="编辑"
+      :width="dialogWidth"
+      :modal="true"
+      :close-on-click-modal="false"
     >
-      <el-form-item label="分类名" prop="categoryName">
-        <el-input v-model="formDataForEdit.categoryName"></el-input>
-      </el-form-item>
-      <el-form-item label="描述" prop="categoryDescription">
-        <el-input
-          v-model="formDataForEdit.categoryDescription"
-          type="textarea"
-          :rows="4"
-        ></el-input>
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="closeEditDialog">取消</el-button>
-      <el-button type="primary" @click="submitForEditForm">确定</el-button>
-    </template>
-  </el-dialog>
+      <el-form
+        ref="formRefForEdit"
+        :model="formDataForEdit"
+        :rules="rulesForEdit"
+        label-width="80px"
+      >
+        <el-form-item label="分类名" prop="categoryName">
+          <el-input v-model="formDataForEdit.categoryName"></el-input>
+        </el-form-item>
+        <el-form-item label="描述" prop="categoryDescription">
+          <el-input
+            v-model="formDataForEdit.categoryDescription"
+            type="textarea"
+            :rows="4"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="closeEditDialog">取消</el-button>
+        <el-button type="primary" @click="submitForEditForm">确定</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <style scoped>
 .category-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 16px;
   padding: 16px 24px;
   background: #ffffff;
@@ -314,12 +318,22 @@ const handleRowClick = (rowData) => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
+.header-content {
+  flex: 1;
+}
+
 .page-title {
-  margin: 0;
-  font-size: 22px;
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+  font-size: 24px;
   font-weight: 600;
-  color: #1a1a1a;
-  position: relative;
+}
+
+.page-subtitle {
+  margin: 0;
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .page-title::after {
@@ -392,15 +406,30 @@ const handleRowClick = (rowData) => {
   margin-left: 16px;
 }
 
-@media screen and (max-width: 768px) {
-  .category-grid {
-    grid-template-columns: 1fr;
-    padding: 10px;
-    gap: 15px;
+@media (max-width: 768px) {
+  .category-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .header-content {
+    text-align: left;
   }
 
   .page-title {
-    font-size: 18px;
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+  }
+
+  .category-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   :deep(.el-dialog) {
