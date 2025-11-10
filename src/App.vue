@@ -37,11 +37,15 @@ body {
   background-color: #f8fafc;
   color: #1e293b;
   line-height: 1.6;
+  margin: 0; /* 确保body没有默认边距 */
+  padding: 0; /* 确保body没有默认内边距 */
 }
 
 #app {
   height: 100vh;
   overflow: hidden;
+  margin: 0; /* 确保app容器没有边距 */
+  padding: 0; /* 确保app容器没有内边距 */
 }
 
 /* 全局适配侧边栏的布局 */

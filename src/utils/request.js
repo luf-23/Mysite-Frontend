@@ -3,7 +3,9 @@ import { ElMessage } from "element-plus";
 import { useTokenStore } from "../store/token.js";
 import router from "../router/index.js";
 //const baseURL = "http://43.142.2.253/api/";
+//const baseURL = "http://luf.woyioii.cn/api/";
 const baseURL = "http://localhost:8080/";
+//const baseURL = "http://192.168.159.105:8080/";
 const request = axios.create({
   baseURL,
   timeout: 6000,
@@ -31,14 +33,10 @@ const processQueue = (error, token = null) => {
 // 刷新token的函数
 const refreshToken = async () => {
   try {
-    const response = await axios.post(
-      `${baseURL}user/refreshToken`,
-      {},
-      {
-        withCredentials: true,
-        timeout: 6000
-      }
-    );
+    const response = await axios.get(`${baseURL}user/refreshToken`, {
+      withCredentials: true,
+      timeout: 6000
+    });
 
     if (response.data.code === 0) {
       return response.data.data; // 返回新的accessToken

@@ -8,7 +8,11 @@
     ></div>
 
     <!-- 顶部导航栏（移动端显示） -->
-    <TopBar @toggle-mobile-menu="toggleMobileMenu" />
+    <TopBar
+      @toggle-mobile-menu="toggleMobileMenu"
+      @toggle-ai-chat-settings="toggleAiChatSettings"
+      @clear-ai-chat="clearAiChat"
+    />
 
     <!-- 侧边栏 -->
     <el-aside
@@ -180,6 +184,18 @@ const onMenuSelect = () => {
   if (window.innerWidth <= 768) {
     showMobileMenu.value = false;
   }
+};
+
+// AI聊天设置面板控制（传递给Chat组件）
+const toggleAiChatSettings = () => {
+  // 通过事件总线或其他方式通知Chat组件
+  window.dispatchEvent(new CustomEvent("toggle-ai-chat-settings"));
+};
+
+// 清空AI聊天记录（传递给Chat组件）
+const clearAiChat = () => {
+  // 通过事件总线或其他方式通知Chat组件
+  window.dispatchEvent(new CustomEvent("clear-ai-chat"));
 };
 </script>
 
@@ -422,7 +438,7 @@ const onMenuSelect = () => {
   .aside {
     position: fixed;
     left: 0;
-    top: 60px; /* 为顶部导航栏留出空间 */
+    top: 60px; /* 确保与TopBar对齐 */
     height: calc(100vh - 60px);
     width: 220px !important; /* 固定宽度，忽略动态宽度 */
     z-index: 2000;
@@ -437,16 +453,19 @@ const onMenuSelect = () => {
 
   .main {
     width: 100% !important;
-    height: calc(100vh - 60px) !important;
+    height: 100vh !important; /* 使用100vh而不是计算值 */
     margin-left: 0 !important;
-    padding-top: 60px; /* 为顶部导航栏留出空间 */
+    margin-top: 0; /* 移除margin-top */
+    padding-top: 60px; /* 恢复使用padding-top，但确保无额外空白 */
     flex: none;
     position: relative;
+    box-sizing: border-box; /* 确保padding包含在高度计算中 */
   }
 
   .main-content {
-    padding: 16px;
-    height: 100%;
+    padding: 8px; /* 进一步减少移动端内边距 */
+    height: calc(100% - 60px); /* 减去顶部padding */
+    overflow-y: auto;
   }
 
   .user-info {

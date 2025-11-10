@@ -282,20 +282,21 @@ const handleWelcomeClick = () => {
 @media (max-width: 768px) {
   .home-page {
     padding: 0;
+    margin: 0; /* 确保没有外边距 */
   }
 
   .welcome-section {
     height: auto;
-    min-height: 180px;
-    margin-bottom: 24px;
+    min-height: 160px; /* 减少高度 */
+    margin-bottom: 16px; /* 减少底部间距 */
     border-radius: 12px;
   }
 
   .welcome-content {
     flex-direction: column;
     text-align: center;
-    padding: 24px;
-    gap: 16px;
+    padding: 20px; /* 减少内边距 */
+    gap: 12px; /* 减少间距 */
   }
 
   .welcome-text h2 {
@@ -314,12 +315,13 @@ const handleWelcomeClick = () => {
   }
 
   .quick-actions {
-    padding: 20px;
+    padding: 16px; /* 减少内边距 */
+    margin: 0; /* 确保没有外边距 */
   }
 
   .actions-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 12px; /* 减少间距 */
   }
 
   .action-card:hover {

@@ -316,16 +316,18 @@ const handleUpload = async (file) => {
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
+  padding-top: 140px; /* 为固定头部留出空间 */
 }
 
 /* 头部样式 */
 .fixed-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   background: white;
-  z-index: 100;
+  z-index: 500;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-bottom: 12px;
   backdrop-filter: blur(8px);
   background-color: rgba(255, 255, 255, 0.95);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -420,6 +422,17 @@ const handleUpload = async (file) => {
 }
 
 /* 响应式调整 */
+@media (min-width: 769px) {
+  .fixed-header {
+    top: 0; /* 桌面端时固定在最顶部 */
+    left: var(--sidebar-width, 220px); /* 考虑侧边栏宽度 */
+  }
+
+  .article-container {
+    padding-top: 140px; /* 桌面端的间距 */
+  }
+}
+
 @media (max-width: 992px) {
   .article-list {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -429,10 +442,12 @@ const handleUpload = async (file) => {
 @media (max-width: 768px) {
   .article-container {
     padding: 8px;
+    padding-top: 200px; /* 在移动端为TopBar和固定头部留出更多空间 */
   }
 
   .fixed-header {
     padding: 6px 0;
+    top: 60px; /* 在移动端紧贴TopBar下方 */
   }
 
   .header-content {

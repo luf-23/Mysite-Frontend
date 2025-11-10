@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, onMounted, nextTick, onUnmounted } from "vue";
 import { useChatStore } from "../../store/chat";
 import { storeToRefs } from "pinia";
 import { ElMessage, ElSelect, ElOption } from "element-plus";
@@ -42,11 +42,36 @@ const closeMobileSettings = () => {
   isMobileSettingsVisible.value = false;
 };
 
+// 监听来自TopBar的事件
+const handleAiChatSettingsToggle = () => {
+  toggleMobileSettings();
+};
+
+const handleAiChatClear = () => {
+  clearChat();
+};
+
 // 在组件加载时，如果没有对话，创建一个新的
 onMounted(() => {
   if (!currentChatId.value) {
     chatStore.createNewChat();
   }
+
+  // 添加事件监听器
+  window.addEventListener(
+    "toggle-ai-chat-settings",
+    handleAiChatSettingsToggle
+  );
+  window.addEventListener("clear-ai-chat", handleAiChatClear);
+});
+
+onUnmounted(() => {
+  // 移除事件监听器
+  window.removeEventListener(
+    "toggle-ai-chat-settings",
+    handleAiChatSettingsToggle
+  );
+  window.removeEventListener("clear-ai-chat", handleAiChatClear);
 });
 
 const isLoading = ref(false);
@@ -385,16 +410,6 @@ const handleMobileChatSelect = (chatId) => {
         {{ isLoading ? "发送中..." : "发送" }}
       </button>
     </div>
-
-    <!-- 移动端汉堡菜单按钮 -->
-    <button class="mobile-menu-btn" @click="toggleMobileSettings">
-      <span>三</span>
-    </button>
-
-    <!-- 移动端清空按钮 -->
-    <button class="mobile-clear-btn" @click="clearChat">
-      清空当前会话记录
-    </button>
   </div>
 </template>
 <style scoped>
@@ -535,55 +550,6 @@ const handleMobileChatSelect = (chatId) => {
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
-}
-
-/* 移动端汉堡菜单按钮 */
-.mobile-menu-btn {
-  display: none;
-  position: fixed;
-  top: 80px;
-  left: 20px; /* 移到最左边 */
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  cursor: pointer;
-  font-size: 18px;
-  transition: all 0.3s ease;
-}
-
-.mobile-menu-btn:active {
-  transform: scale(0.95);
-}
-
-/* 移动端清空按钮 */
-.mobile-clear-btn {
-  display: none;
-  position: fixed;
-  top: 80px;
-  right: 20px; /* 保持在最右边 */
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 8px; /* 改为长方形 */
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-  color: white;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: all 0.3s ease;
-  min-width: auto;
-}
-
-.mobile-clear-btn:active {
-  transform: scale(0.95);
 }
 
 .chat-header {
@@ -843,13 +809,6 @@ const handleMobileChatSelect = (chatId) => {
     display: block;
   }
 
-  .mobile-menu-btn,
-  .mobile-clear-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
   /* 隐藏桌面端元素 */
   .desktop-only {
     display: none !important;
@@ -892,11 +851,6 @@ const handleMobileChatSelect = (chatId) => {
 /* 桌面端确保移动端元素隐藏 */
 @media screen and (min-width: 769px) {
   .mobile-settings-sidebar {
-    display: none !important;
-  }
-
-  .mobile-menu-btn,
-  .mobile-clear-btn {
     display: none !important;
   }
 
